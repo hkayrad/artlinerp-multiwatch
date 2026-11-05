@@ -126,13 +126,13 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Sağ Taraf: Yayın Listesi/Ekle, Düzen, Sohbet, Paylaşım ve Discord */}
         <div className="flex items-center gap-2">
-          {/* Yayın Seçici Listesi & Ekle Butonu */}
+          {/* Yayın Seçici Listesi Butonu */}
           <button
             onClick={onOpenAddModal}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-semibold text-xs transition-colors shadow-md shadow-orange-600/20 active:scale-95"
           >
             <Tv className="w-3.5 h-3.5" />
-            <span>Yayın Seç & Ekle</span>
+            <span>Yayın Seç</span>
           </button>
 
           {/* Düzen Değiştirici */}

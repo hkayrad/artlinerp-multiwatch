@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Search, Plus, Check, Trash2, Tv } from 'lucide-react';
-import { Platform, StreamItem, siteConfig } from '../config/siteConfig';
-import { parseChannelInput } from '../utils/streamUtils';
+import { StreamItem, siteConfig } from '../config/siteConfig';
 
 interface StreamSelectorModalProps {
   isOpen: boolean;
@@ -22,16 +21,8 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
   onSelectVillage,
   onClearAll,
 }) => {
-  const [activeTab, setActiveTab] = useState<'all' | 'konoha' | 'suna' | 'custom'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'konoha' | 'suna'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Özel kanal ekleme formu için state
-  const [customInput, setCustomInput] = useState('');
-  const [customPlatform, setCustomPlatform] = useState<Platform>('kick');
-  const [customName, setCustomName] = useState('');
-  const [customVillage, setCustomVillage] = useState<'konoha' | 'suna' | 'diger'>('konoha');
-  const [customRole, setCustomRole] = useState('');
-  const [customError, setCustomError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -65,40 +56,6 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
     return true;
   });
 
-  // Özel kanal ekleme işlemi
-  const handleAddCustomStream = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customInput.trim()) {
-      setCustomError('Lütfen bir yayıncı adı veya bağlantı girin.');
-      return;
-    }
-
-    const parsed = parseChannelInput(customInput, customPlatform);
-    if (!parsed.channel) {
-      setCustomError('Geçersiz kanal adı veya bağlantı.');
-      return;
-    }
-
-    const key = `${parsed.platform}:${parsed.channel.toLowerCase()}`;
-    if (activeChannelsMap.has(key)) {
-      setCustomError('Bu kanal zaten çoklu ekranda ekli.');
-      return;
-    }
-
-    onAddStream({
-      name: customName.trim() || parsed.channel,
-      channel: parsed.channel,
-      platform: parsed.platform,
-      village: customVillage,
-      roleTag: customRole.trim() || undefined,
-    });
-
-    setCustomInput('');
-    setCustomName('');
-    setCustomRole('');
-    setCustomError(null);
-  };
-
   const konohaCount = siteConfig.villages.konoha.streams.length;
   const sunaCount = siteConfig.villages.suna.streams.length;
 
@@ -121,7 +78,7 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                İzlemek istediğiniz karakterleri listeden seçerek çoklu ekrana ekleyin veya çıkarın
+                İzlemek istediğiniz sunucu karakterlerini seçerek çoklu ekrana ekleyin veya çıkarın
               </p>
             </div>
           </div>
@@ -178,18 +135,6 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
                 {sunaCount}
               </span>
             </button>
-
-            <button
-              onClick={() => setActiveTab('custom')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'custom'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                  : 'text-slate-400 hover:text-purple-400 hover:bg-ninja-900'
-              }`}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Özel Kanal</span>
-            </button>
           </div>
 
           {/* Toplu İşlem Kısayolları */}
@@ -219,137 +164,31 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
           </div>
         </div>
 
-        {/* Arama Çubuğu (Özel kanal sekmesinde değilse) */}
-        {activeTab !== 'custom' && (
-          <div className="p-3 bg-ninja-950/50 border-b border-ninja-800">
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Yayıncı adı, karakter veya rol ara... (örn: Akio, Kinma, zade, Chunin)"
-                className="w-full pl-10 pr-4 py-2 rounded-xl bg-ninja-900 border border-ninja-700/80 focus:border-orange-500 text-xs text-slate-100 placeholder-slate-500 outline-none transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
-                >
-                  Temizle
-                </button>
-              )}
-            </div>
+        {/* Arama Çubuğu */}
+        <div className="p-3 bg-ninja-950/50 border-b border-ninja-800">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Yayıncı adı, karakter veya rol ara... (örn: Akio, Kinma, zade, Chunin)"
+              className="w-full pl-10 pr-4 py-2 rounded-xl bg-ninja-900 border border-ninja-700/80 focus:border-orange-500 text-xs text-slate-100 placeholder-slate-500 outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs"
+              >
+                Temizle
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         {/* İçerik Alanı: Yayın Kartları Listesi */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
-          {activeTab === 'custom' ? (
-            /* Özel Kanal Ekleme Formu */
-            <form onSubmit={handleAddCustomStream} className="space-y-4 max-w-lg mx-auto py-2">
-              <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs text-purple-300">
-                Sunucu listesinde bulunmayan herhangi bir Twitch veya Kick yayıncısını ekleyin.
-              </div>
-
-              {customError && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
-                  {customError}
-                </div>
-              )}
-
-              {/* Platform Seçimi */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Platform
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCustomPlatform('kick')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all ${
-                      customPlatform === 'kick'
-                        ? 'bg-kick text-black border-kick/60 shadow-lg shadow-kick/20 font-extrabold'
-                        : 'bg-ninja-950 text-slate-400 border-ninja-800'
-                    }`}
-                  >
-                    <span>🟢</span>
-                    <span>Kick</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCustomPlatform('twitch')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all ${
-                      customPlatform === 'twitch'
-                        ? 'bg-twitch text-white border-twitch/60 shadow-lg shadow-twitch/20'
-                        : 'bg-ninja-950 text-slate-400 border-ninja-800'
-                    }`}
-                  >
-                    <span>🟣</span>
-                    <span>Twitch</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Kanal Adı */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Kanal Adı veya Bağlantısı <span className="text-orange-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={customInput}
-                  onChange={e => {
-                    setCustomInput(e.target.value);
-                    setCustomError(null);
-                  }}
-                  placeholder={customPlatform === 'kick' ? 'Örn: zade veya kick.com/zade' : 'Örn: elraenn veya twitch.tv/elraenn'}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-ninja-950 border border-ninja-700 focus:border-orange-500 text-slate-100 text-xs outline-none"
-                  autoFocus
-                />
-              </div>
-
-              {/* Karakter İsmi ve Köy */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Karakter / POV İsmi (Opsiyonel)
-                  </label>
-                  <input
-                    type="text"
-                    value={customName}
-                    onChange={e => setCustomName(e.target.value)}
-                    placeholder="Örn: Hokage POV (Ahmet)"
-                    className="w-full px-3.5 py-2 rounded-xl bg-ninja-950 border border-ninja-700 focus:border-orange-500 text-slate-100 text-xs outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Köy Seçimi
-                  </label>
-                  <select
-                    value={customVillage}
-                    onChange={e => setCustomVillage(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-ninja-950 border border-ninja-700 text-slate-100 text-xs outline-none"
-                  >
-                    <option value="konoha">🍃 Konohagakure</option>
-                    <option value="suna">⏳ Sunagakure</option>
-                    <option value="diger">⚔️ Diğer</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-600/30 transition-all active:scale-95 flex items-center gap-1.5"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Yayını Ekle</span>
-                </button>
-              </div>
-            </form>
-          ) : filteredStreams.length === 0 ? (
+          {filteredStreams.length === 0 ? (
             <div className="p-8 text-center text-slate-400 text-xs">
               Aramanızla eşleşen yayıncı bulunamadı.
             </div>
