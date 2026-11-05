@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Volume2, VolumeX, RotateCw, X, Maximize2, Headphones } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Volume2, VolumeX, RotateCw, X, Maximize2, Headphones, Expand } from 'lucide-react';
 import { StreamItem } from '../config/siteConfig';
 import { getParentDomain } from '../utils/streamUtils';
 
@@ -14,7 +14,7 @@ interface StreamPlayerProps {
   onFocus?: (id: string) => void;
 }
 
-export const StreamPlayer: React.FC<StreamPlayerProps> = ({
+export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
   stream,
   isMuted,
   isSolo,
@@ -30,14 +30,14 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
 
   const parentDomain = getParentDomain();
 
-  // Platform iframe URL üretimi
-  const getEmbedUrl = () => {
+  // Platform iframe URL üretimi (stabil referans)
+  const embedUrl = useMemo(() => {
     if (stream.platform === 'twitch') {
       return `https://player.twitch.tv/?channel=${encodeURIComponent(stream.channel)}&parent=${parentDomain}&muted=${isMuted ? 'true' : 'false'}&autoplay=true`;
     }
     // Kick embed player
     return `https://player.kick.com/${encodeURIComponent(stream.channel)}?autoplay=true&muted=${isMuted ? 'true' : 'false'}`;
-  };
+  }, [stream.platform, stream.channel, parentDomain, reloadKey, isMuted]);
 
   const handleReload = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -101,7 +101,18 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
         </div>
 
         {/* Sağ Taraf: Kontroller */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+          {/* Tiyatro modunda ana ekrana al butonu (Odaklanmamışsa) */}
+          {!isFocused && onFocus && (
+            <button
+              onClick={() => onFocus(stream.id)}
+              title="Tiyatroda Ana Ekrana Al (Yayın kesilmez)"
+              className="p-1.5 text-slate-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors"
+            >
+              <Expand className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           {/* Tek Ses (Solo Audio) */}
           <button
             onClick={() => onSoloAudio(stream.id)}
@@ -162,14 +173,15 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
       <div className="relative flex-1 w-full bg-ninja-950 aspect-video">
         <iframe
           key={`${stream.channel}-${reloadKey}`}
-          src={getEmbedUrl()}
+          src={embedUrl}
           title={`${stream.platform} - ${stream.channel}`}
           className="w-full h-full border-0 absolute inset-0"
           allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
           allowFullScreen
-          loading="lazy"
+          loading="eager"
         />
       </div>
     </div>
   );
-};
+});
+

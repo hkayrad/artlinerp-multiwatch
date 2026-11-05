@@ -81,104 +81,93 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
     );
   }
 
-  // Tiyatro / Odak Modu: 1 ana yayın büyük, diğerleri yanda veya altta
-  if (layoutMode === 'theatre') {
-    const mainStream = streams.find(s => s.id === focusedStreamId) || streams[0];
-    const sideStreams = streams.filter(s => s.id !== mainStream.id);
-
-    return (
-      <div className="flex-1 flex flex-col lg:flex-row gap-3 p-3 overflow-y-auto">
-        {/* Ana Büyük Yayın */}
-        <div className="flex-1 min-h-[50vh] flex flex-col">
-          <StreamPlayer
-            stream={mainStream}
-            isMuted={mutedStreams.has(mainStream.id)}
-            isSolo={soloStreamId === mainStream.id}
-            onToggleMute={onToggleMute}
-            onSoloAudio={onSoloAudio}
-            onRemove={onRemoveStream}
-            isFocused={true}
-            onFocus={onFocusStream}
-          />
-        </div>
-
-        {/* Yan Thumbnail Yayınlar */}
-        {sideStreams.length > 0 && (
-          <div className="w-full lg:w-80 xl:w-96 flex lg:flex-col gap-3 overflow-x-auto lg:overflow-y-auto shrink-0 pb-2 lg:pb-0">
-            {sideStreams.map(stream => (
-              <div key={stream.id} className="min-w-[260px] lg:min-w-0">
-                <StreamPlayer
-                  stream={stream}
-                  isMuted={mutedStreams.has(stream.id)}
-                  isSolo={soloStreamId === stream.id}
-                  onToggleMute={onToggleMute}
-                  onSoloAudio={onSoloAudio}
-                  onRemove={onRemoveStream}
-                  isFocused={false}
-                  onFocus={onFocusStream}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Sabit 2x2 Izgara Modu
-  if (layoutMode === '2x2') {
-    return (
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 overflow-y-auto content-start auto-rows-fr">
-        {streams.map(stream => (
-          <StreamPlayer
-            key={stream.id}
-            stream={stream}
-            isMuted={mutedStreams.has(stream.id)}
-            isSolo={soloStreamId === stream.id}
-            onToggleMute={onToggleMute}
-            onSoloAudio={onSoloAudio}
-            onRemove={onRemoveStream}
-            isFocused={focusedStreamId === stream.id}
-            onFocus={onFocusStream}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  // Dinamik Otomatik Izgara (Auto Mode)
   const count = streams.length;
-  let gridColsClass = 'grid-cols-1';
 
-  if (count === 2) {
-    gridColsClass = 'grid-cols-1 lg:grid-cols-2';
-  } else if (count === 3) {
-    gridColsClass = 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
-  } else if (count === 4) {
-    gridColsClass = 'grid-cols-1 sm:grid-cols-2';
-  } else if (count >= 5 && count <= 6) {
-    gridColsClass = 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3';
-  } else if (count >= 7) {
-    gridColsClass = 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4';
+  // Tiyatro modunda odaklanmış yayını belirle (yoksa ilk yayın)
+  const effectiveMainId =
+    focusedStreamId && streams.some(s => s.id === focusedStreamId)
+      ? focusedStreamId
+      : streams[0]?.id;
+
+  // Kapsayıcı CSS Grid sınıflarını belirle
+  let containerGridClass = 'grid-cols-1';
+
+  if (layoutMode === 'theatre') {
+    if (count === 1) {
+      containerGridClass = 'grid-cols-1';
+    } else {
+      // Tiyatro Modu: Masaüstünde 4 sütunlu ızgara (3 sütun ana yayın, 1 sütun yan yayınlar)
+      containerGridClass = 'grid-cols-1 lg:grid-cols-4 items-start auto-rows-max';
+    }
+  } else if (layoutMode === '2x2') {
+    containerGridClass = 'grid-cols-1 md:grid-cols-2 auto-rows-fr';
+  } else {
+    // Otomatik Mod (Auto Mode)
+    if (count === 2) {
+      containerGridClass = 'grid-cols-1 lg:grid-cols-2 auto-rows-fr';
+    } else if (count === 3) {
+      containerGridClass = 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-fr';
+    } else if (count === 4) {
+      containerGridClass = 'grid-cols-1 sm:grid-cols-2 auto-rows-fr';
+    } else if (count >= 5 && count <= 6) {
+      containerGridClass = 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr';
+    } else if (count >= 7) {
+      containerGridClass = 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 auto-rows-fr';
+    } else {
+      containerGridClass = 'grid-cols-1 auto-rows-fr';
+    }
   }
+
+  // Tiyatro modunda ana yayının kaç satır kaplayacağını belirle
+  const mainRowSpanClass =
+    count === 2
+      ? 'lg:row-span-1'
+      : count === 3
+      ? 'lg:row-span-2'
+      : 'lg:row-span-3';
 
   return (
+    /**
+     * ÖNEMLİ: Tarayıcılarda (Chrome, Firefox, Safari) iframe öğeleri DOM ağacında
+     * başka bir kapsayıcıya (div) taşındığında veya unmount edildiğinde otomatik olarak yeniden yüklenir (reload).
+     * Düzen değiştirildiğinde (Auto -> Tiyatro) veya Tiyatro modunda yayınların yeri değiştiğinde
+     * yayınların kesilmemesi / yeniden yüklenmemesi için tüm StreamPlayer öğeleri
+     * TEK BİR SABİT KAP (persistent container) içinde tutulur ve sadece CSS Grid / order sınıfları değiştirilir.
+     */
     <div
-      className={`flex-1 grid ${gridColsClass} gap-3 p-3 overflow-y-auto content-start auto-rows-fr`}
+      className={`flex-1 grid ${containerGridClass} gap-3 p-3 overflow-y-auto content-start transition-all duration-300`}
     >
-      {streams.map(stream => (
-        <StreamPlayer
-          key={stream.id}
-          stream={stream}
-          isMuted={mutedStreams.has(stream.id)}
-          isSolo={soloStreamId === stream.id}
-          onToggleMute={onToggleMute}
-          onSoloAudio={onSoloAudio}
-          onRemove={onRemoveStream}
-          isFocused={focusedStreamId === stream.id}
-          onFocus={onFocusStream}
-        />
-      ))}
+      {streams.map(stream => {
+        const isMain = layoutMode === 'theatre' && stream.id === effectiveMainId;
+
+        // Her yayın öğesinin CSS Grid ve sıralama sınıfları
+        let itemClass = 'w-full transition-all duration-200';
+
+        if (layoutMode === 'theatre') {
+          if (isMain) {
+            itemClass += ` order-first ${count > 1 ? `lg:col-span-3 ${mainRowSpanClass}` : 'col-span-1'}`;
+          } else {
+            itemClass += ' order-none lg:col-span-1';
+          }
+        } else {
+          itemClass += ' col-span-1 order-none';
+        }
+
+        return (
+          <div key={stream.id} className={itemClass}>
+            <StreamPlayer
+              stream={stream}
+              isMuted={mutedStreams.has(stream.id)}
+              isSolo={soloStreamId === stream.id}
+              onToggleMute={onToggleMute}
+              onSoloAudio={onSoloAudio}
+              onRemove={onRemoveStream}
+              isFocused={isMain}
+              onFocus={onFocusStream}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 };
