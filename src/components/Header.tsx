@@ -181,10 +181,10 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden xl:inline">Sohbet</span>
           </button>
 
-          {/* Discord için Paylaş */}
+          {/* Paylaş */}
           <button
             onClick={onShareLink}
-            title="Mevcut yayın düzenini Discord'da paylaşmak için kopyala"
+            title="Yayın düzeni URL bağlantısını kopyala"
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-ninja-950/80 hover:bg-ninja-800 text-slate-300 border border-ninja-800 hover:text-white transition-colors active:scale-95"
           >
             <Share2 className="w-3.5 h-3.5 text-blue-400" />

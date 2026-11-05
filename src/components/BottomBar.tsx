@@ -109,10 +109,11 @@ export const BottomBar: React.FC<BottomBarProps> = ({
 
           <button
             onClick={onShareLink}
+            title="Yayın düzeni URL bağlantısını kopyala"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/30 font-semibold transition-colors active:scale-95"
           >
             <Share2 className="w-3.5 h-3.5" />
-            <span>Discord için Kopyala</span>
+            <span>Paylaş</span>
           </button>
         </div>
       </div>

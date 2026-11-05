@@ -250,10 +250,10 @@ export function useMultiwatch() {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(
       () => {
-        showToast('✅ Discord bağlantısı kopyalandı! Doğrudan sohbete yapıştırabilirsiniz.');
+        showToast('✅ URL kopyalandı!');
       },
       () => {
-        showToast('Bağlantı kopyalanamadı, lütfen URL çubuğundan kopyalayın.', 'error');
+        showToast('URL kopyalanamadı, lütfen adres çubuğundan kopyalayın.', 'error');
       }
     );
   }, [showToast]);
