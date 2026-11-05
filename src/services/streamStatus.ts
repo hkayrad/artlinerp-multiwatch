@@ -84,6 +84,7 @@ export async function fetchMultipleStreamStatuses(
   results.forEach(res => {
     if (res.status === 'fulfilled') {
       statusMap[res.value.id] = res.value.status;
+      statusMap[res.value.status.channel.toLowerCase()] = res.value.status;
     }
   });
 

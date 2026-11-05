@@ -129,26 +129,37 @@ export function useMultiwatch() {
 
   // Yeni Yayın Ekle
   const addStream = useCallback((item: Omit<StreamItem, 'id'>) => {
-    const newId = `${item.platform}-${item.channel}-${Date.now()}`;
-    const newStream: StreamItem = {
-      ...item,
-      id: newId,
-    };
-
+    // Aynı kanalın zaten ekli olup olmadığını kontrol et
+    let isAlreadyAdded = false;
     setStreams(prev => {
-      const updated = [...prev, newStream];
-      return updated;
+      if (prev.some(s => s.channel.toLowerCase() === item.channel.toLowerCase() && s.platform === item.platform)) {
+        isAlreadyAdded = true;
+        return prev;
+      }
+
+      const newId = `${item.platform}-${item.channel}-${Date.now()}`;
+      const newStream: StreamItem = {
+        ...item,
+        id: newId,
+      };
+
+      // Yeni eklenen yayını sustur (mevcut sesi bölmesin)
+      setMutedStreams(mutedPrev => {
+        const next = new Set(mutedPrev);
+        next.add(newId);
+        return next;
+      });
+
+      return [...prev, newStream];
     });
 
-    // Yeni eklenen yayını sustur (mevcut sesi bölmesin)
-    setMutedStreams(prev => {
-      const next = new Set(prev);
-      next.add(newId);
-      return next;
-    });
+    if (isAlreadyAdded) {
+      showToast(`"${item.name}" zaten ekranda açık`, 'info');
+      return;
+    }
 
     setActiveVillage('custom');
-    showToast(`"${newStream.name}" yayına eklendi`);
+    showToast(`"${item.name}" yayına eklendi`);
   }, [showToast]);
 
   // Çoklu Yayın Yükle (Canlı yayınları topluca açmak için)

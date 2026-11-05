@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Search, Plus, Check, Trash2, Tv } from 'lucide-react';
 import { StreamItem, siteConfig } from '../config/siteConfig';
 import { useLiveStatus } from '../hooks/useLiveStatus';
@@ -25,6 +25,16 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
   const [activeTab, setActiveTab] = useState<'all' | 'konoha' | 'suna'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const { statuses } = useLiveStatus();
+
+  // Escape tuşu ile modalı kapatma
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

@@ -21,7 +21,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
   // Aktif yayın yoksa
   if (streams.length === 0) {
     return (
-      <aside className="w-80 md:w-96 bg-ninja-900 border-l border-ninja-700/70 flex flex-col shrink-0 select-none">
+      <aside className="fixed inset-0 z-40 md:relative md:inset-auto w-full md:w-80 xl:w-96 bg-ninja-900 border-l border-ninja-700/70 flex flex-col shrink-0 select-none shadow-2xl">
         <div className="flex items-center justify-between p-3 border-b border-ninja-800">
           <div className="flex items-center gap-2 text-sm font-bold text-slate-200">
             <MessageSquare className="w-4 h-4 text-purple-400" />
@@ -61,7 +61,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
   };
 
   return (
-    <aside className="w-full md:w-80 xl:w-96 bg-ninja-900 border-l border-ninja-700/70 flex flex-col shrink-0 z-20 shadow-2xl">
+    <aside className="fixed inset-0 z-40 md:relative md:inset-auto w-full md:w-80 xl:w-96 bg-ninja-900 border-l border-ninja-700/70 flex flex-col shrink-0 z-20 shadow-2xl">
       {/* Başlık ve Kapat Butonu */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-ninja-800 bg-ninja-900">
         <div className="flex items-center gap-2">

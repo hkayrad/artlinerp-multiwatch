@@ -68,8 +68,11 @@ export function deserializeStreamsFromQuery(query: string): { channel: string; p
 
 /**
  * Mevcut alan adını Twitch parent parametresi için hazırlar.
+ * Twitch IP adreslerini (örn: 127.0.0.1) kabul etmez, localhost veya geçerli alan adı gerektirir.
  */
 export function getParentDomain(): string {
   if (typeof window === 'undefined') return 'localhost';
-  return window.location.hostname || 'localhost';
+  const hostname = window.location.hostname;
+  if (!hostname || hostname === '127.0.0.1') return 'localhost';
+  return hostname;
 }

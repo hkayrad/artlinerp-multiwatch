@@ -85,7 +85,16 @@ export const siteConfig: SiteConfig = {
           village: 'konoha',
           roleTag: 'Jonin',
           isDefaultActive: false,
-        }
+        },
+        {
+          id: 'youngtizan',
+          name: 'Reima Senju',
+          channel: 'YoungTizan',
+          platform: 'kick',
+          village: 'konoha',
+          roleTag: 'Tokubetsu Chunin',
+          isDefaultActive: false,
+        },
       ],
     },
     suna: {
@@ -112,6 +121,15 @@ export const siteConfig: SiteConfig = {
           platform: 'kick',
           village: 'suna',
           roleTag: 'Onayli Genin',
+          isDefaultActive: false,
+        },
+        {
+          id: 'efes',
+          name: 'Huren Kurozane',
+          channel: 'efes',
+          platform: 'kick',
+          village: 'suna',
+          roleTag: 'Tokubetsu Chunin',
           isDefaultActive: false,
         }
       ],
