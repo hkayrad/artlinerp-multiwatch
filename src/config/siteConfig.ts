@@ -26,6 +26,8 @@ export interface SiteConfig {
   serverLogo: string; // Resim bağlantısı veya yerel dosya (/artline.webp)
   creatorName: string;
   creatorLogo: string; // Kurucu / Geliştirici logosu bağlantısı (/hkd.webp)
+  creatorDiscord: string; // Yayıncı ekleme / İletişim için Discord hesabı (@falconhk)
+  requestStreamerNotice: string;
   discordUrl: string;
   defaultLayout: 'auto' | '2x2' | 'theatre';
   defaultVillage: 'konoha' | 'suna' | 'all';
@@ -52,6 +54,8 @@ export const siteConfig: SiteConfig = {
   // Geliştirici / Kurucu Logosu ve İsmi
   creatorName: "HKD",
   creatorLogo: "/hkd.webp",
+  creatorDiscord: "@falconhk",
+  requestStreamerNotice: "Eklenmesini istediğiniz yayıncı varsa kanal ve oyuncu adlarıyla bana yazabilirsiniz",
   
   // Topluluk Discord Bağlantısı
   discordUrl: "https://discord.gg/artline",

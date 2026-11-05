@@ -227,6 +227,17 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
               <span>Tüm Yayın Listesini Gör</span>
             </button>
           </div>
+
+          {/* Yayıncı İstek & Discord İletişim */}
+          <div className="mt-6 p-3 rounded-xl bg-ninja-900/60 border border-ninja-800/80 flex items-center justify-center gap-2 text-xs text-slate-400">
+            <span>💬</span>
+            <span>
+              {siteConfig.requestStreamerNotice}:{' '}
+              <strong className="text-orange-400 font-mono font-bold">
+                {siteConfig.creatorDiscord}
+              </strong>
+            </span>
+          </div>
         </div>
       </div>
     );

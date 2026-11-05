@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Plus, Check, Trash2, Tv } from 'lucide-react';
+import { X, Search, Plus, Check, Trash2, Tv, Copy } from 'lucide-react';
 import { StreamItem, siteConfig } from '../config/siteConfig';
 import { useLiveStatus } from '../hooks/useLiveStatus';
 
@@ -24,6 +24,7 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'konoha' | 'suna'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [copiedDiscord, setCopiedDiscord] = useState(false);
   const { statuses } = useLiveStatus();
 
   // Escape tuşu ile modalı kapatma
@@ -307,6 +308,41 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
               );
             })
           )}
+        </div>
+
+        {/* Yayıncı Ekleme İstek & Discord İletişim */}
+        <div className="px-4 py-2.5 bg-ninja-950 border-t border-ninja-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm shrink-0">💬</span>
+            <p className="text-slate-300 text-[11px] sm:text-xs">
+              {siteConfig.requestStreamerNotice}:{' '}
+              <span className="font-mono font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/30">
+                {siteConfig.creatorDiscord}
+              </span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(siteConfig.creatorDiscord);
+              setCopiedDiscord(true);
+              setTimeout(() => setCopiedDiscord(false), 2000);
+            }}
+            className="shrink-0 px-2 py-1 rounded-md bg-ninja-900 hover:bg-ninja-800 text-[11px] font-medium text-slate-300 border border-ninja-700/80 transition-colors flex items-center gap-1 active:scale-95"
+            title="Discord kullanıcı adını kopyala"
+          >
+            {copiedDiscord ? (
+              <>
+                <Check className="w-3 h-3 text-emerald-400" />
+                <span className="text-emerald-400">Kopyalandı!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3 h-3 text-slate-400" />
+                <span>Kopyala</span>
+              </>
+            )}
+          </button>
         </div>
 
         {/* Modal Alt Bar */}

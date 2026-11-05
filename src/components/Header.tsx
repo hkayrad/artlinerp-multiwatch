@@ -66,8 +66,11 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="hidden sm:block h-7 w-[1px] bg-ninja-700/80 mx-1" />
 
-          {/* 2. Geliştirici / Kurucu Logosu */}
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 bg-ninja-950/60 px-2.5 py-1 rounded-lg border border-ninja-800">
+          {/* 2. Geliştirici / Kurucu Logosu & İletişim */}
+          <div
+            className="hidden sm:flex items-center gap-2 text-xs text-slate-400 bg-ninja-950/60 px-2.5 py-1 rounded-lg border border-ninja-800"
+            title={`${siteConfig.requestStreamerNotice} (Discord: ${siteConfig.creatorDiscord})`}
+          >
             <img
               src={siteConfig.creatorLogo}
               alt={siteConfig.creatorName}
@@ -78,6 +81,9 @@ export const Header: React.FC<HeaderProps> = ({
             />
             <span className="font-medium text-slate-300">
               {siteConfig.creatorName}
+            </span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-ninja-900 text-orange-400 border border-ninja-800">
+              {siteConfig.creatorDiscord}
             </span>
           </div>
         </div>
