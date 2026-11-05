@@ -49,7 +49,7 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
           Aktif Yayın Bulunmuyor
         </h2>
         <p className="text-sm text-slate-400 max-w-md mb-8">
-          İzlemek istediğiniz köyün POV yayınlarını tek tıkla yükleyebilir veya özel bir Twitch / Kick kanalı ekleyebilirsiniz.
+          İzlemek istediğiniz köyün POV yayınlarını tek tıkla yükleyebilir veya yayın listesinden karakter seçebilirsiniz.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -89,68 +89,74 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
       ? focusedStreamId
       : streams[0]?.id;
 
-  // Kapsayıcı CSS Grid sınıflarını belirle
-  let containerGridClass = 'grid-cols-1';
-
-  if (layoutMode === 'theatre') {
-    if (count === 1) {
-      containerGridClass = 'grid-cols-1';
-    } else {
-      // Tiyatro Modu: Masaüstünde 4 sütunlu ızgara (3 sütun ana yayın, 1 sütun yan yayınlar)
-      containerGridClass = 'grid-cols-1 lg:grid-cols-4 items-start auto-rows-max';
-    }
-  } else if (layoutMode === '2x2') {
-    containerGridClass = 'grid-cols-1 md:grid-cols-2 auto-rows-fr';
-  } else {
-    // Otomatik Mod (Auto Mode)
-    if (count === 2) {
-      containerGridClass = 'grid-cols-1 lg:grid-cols-2 auto-rows-fr';
-    } else if (count === 3) {
-      containerGridClass = 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-fr';
-    } else if (count === 4) {
-      containerGridClass = 'grid-cols-1 sm:grid-cols-2 auto-rows-fr';
-    } else if (count >= 5 && count <= 6) {
-      containerGridClass = 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr';
-    } else if (count >= 7) {
-      containerGridClass = 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 auto-rows-fr';
-    } else {
-      containerGridClass = 'grid-cols-1 auto-rows-fr';
-    }
-  }
-
-  // Tiyatro modunda ana yayının kaç satır kaplayacağını belirle
-  const mainRowSpanClass =
-    count === 2
-      ? 'lg:row-span-1'
-      : count === 3
-      ? 'lg:row-span-2'
-      : 'lg:row-span-3';
+  // 12 Sütunlu Dengeli ve Orantılı Izgara Kapsayıcısı
+  const containerAlignmentClass = count === 1 ? 'content-center' : 'content-start';
 
   return (
     /**
-     * ÖNEMLİ: Tarayıcılarda (Chrome, Firefox, Safari) iframe öğeleri DOM ağacında
-     * başka bir kapsayıcıya (div) taşındığında veya unmount edildiğinde otomatik olarak yeniden yüklenir (reload).
-     * Düzen değiştirildiğinde (Auto -> Tiyatro) veya Tiyatro modunda yayınların yeri değiştiğinde
-     * yayınların kesilmemesi / yeniden yüklenmemesi için tüm StreamPlayer öğeleri
-     * TEK BİR SABİT KAP (persistent container) içinde tutulur ve sadece CSS Grid / order sınıfları değiştirilir.
+     * 12 Sütunlu Izgara (Grid-12):
+     * - 1 Yayın: Ortalanmış, ekran yüksekliğine tam oturan dengeli sinematik boyut.
+     * - 2 Yayın: Tiyatro modunda %67 - %33 mükemmel orantı; Otomatikte eşit %50 / %50.
+     * - 3 Yayın: Tiyatro modunda ana ekran yüksekliği ile yan 2 ekranın toplam yüksekliği pikseli pikseline eşit.
+     * - 4 Yayın: Tiyatro modunda ana ekran ile yan 3 ekran tam eşit; Otomatikte simetrik 2x2.
+     * Tüm yayınlar tek kapsayıcıda kalarak düzen geçişlerinde ASLA yeniden yüklenmez.
      */
     <div
-      className={`flex-1 grid ${containerGridClass} gap-3 p-3 overflow-y-auto content-start transition-all duration-300`}
+      className={`flex-1 grid grid-cols-12 gap-3 p-3 sm:p-4 overflow-y-auto ${containerAlignmentClass} transition-all duration-300`}
     >
       {streams.map(stream => {
         const isMain = layoutMode === 'theatre' && stream.id === effectiveMainId;
 
-        // Her yayın öğesinin CSS Grid ve sıralama sınıfları
         let itemClass = 'w-full transition-all duration-200';
 
-        if (layoutMode === 'theatre') {
-          if (isMain) {
-            itemClass += ` order-first ${count > 1 ? `lg:col-span-3 ${mainRowSpanClass}` : 'col-span-1'}`;
+        if (count === 1) {
+          // Tek Yayın: Ekranda orantılı, aşırı taşmayan ve tam ortalanmış görünüm
+          itemClass += ' col-span-12 max-w-5xl mx-auto order-none';
+        } else if (layoutMode === 'theatre') {
+          // TİYATRO DÜZENİ ORANTILARI:
+          if (count === 2) {
+            if (isMain) {
+              // 2 Yayında: %67 Ana Ekran (8 Kolon), %33 Yan Ekran (4 Kolon)
+              itemClass += ' order-first col-span-12 lg:col-span-8';
+            } else {
+              itemClass += ' order-none col-span-12 lg:col-span-4';
+            }
+          } else if (count === 3) {
+            if (isMain) {
+              // 3 Yayında: Ana ekran 8 kolon & 2 satır. Yan 2 ekran (4'er kolon) tam ana ekran yüksekliğine denk gelir.
+              itemClass += ' order-first col-span-12 lg:col-span-8 lg:row-span-2';
+            } else {
+              itemClass += ' order-none col-span-12 lg:col-span-4';
+            }
           } else {
-            itemClass += ' order-none lg:col-span-1';
+            // 4 ve üzeri yayında: Ana ekran 9 kolon & 3 satır (%75). Yan ekranlar 3 kolon (%25).
+            if (isMain) {
+              itemClass += ' order-first col-span-12 lg:col-span-9 lg:row-span-3';
+            } else {
+              itemClass += ' order-none col-span-12 lg:col-span-3';
+            }
           }
+        } else if (layoutMode === '2x2') {
+          // 2x2 Sabit Izgara: Eşit %50 / %50 (6 kolon)
+          itemClass += ' col-span-12 sm:col-span-6 order-none';
         } else {
-          itemClass += ' col-span-1 order-none';
+          // OTOMATİK MOD DENGELİ DAĞILIM:
+          if (count === 2) {
+            // 2 Yayın: Eşit %50 / %50 (Masaüstünde yan yana)
+            itemClass += ' col-span-12 lg:col-span-6 order-none';
+          } else if (count === 3) {
+            // 3 Yayın: Eşit %33.3 (Masaüstünde 3 sütun)
+            itemClass += ' col-span-12 md:col-span-6 lg:col-span-4 order-none';
+          } else if (count === 4) {
+            // 4 Yayın: Simetrik 2x2
+            itemClass += ' col-span-12 sm:col-span-6 order-none';
+          } else if (count >= 5 && count <= 6) {
+            // 5-6 Yayın: Dengeli 3x2
+            itemClass += ' col-span-12 sm:col-span-6 lg:col-span-4 order-none';
+          } else {
+            // 7+ Yayın: 4 sütunlu dağılım
+            itemClass += ' col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 order-none';
+          }
         }
 
         return (
