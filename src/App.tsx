@@ -51,8 +51,8 @@ export const App: React.FC = () => {
       />
 
       {/* Ana Gövde: Yayın Izgarası + Yan Sohbet Paneli */}
-      <div className="flex-1 flex overflow-hidden relative">
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gradient-to-b from-ninja-950 to-ninja-900">
+      <div className="flex-1 min-h-0 flex overflow-hidden relative">
+        <main className="flex-1 min-h-0 flex flex-col min-w-0 overflow-hidden bg-gradient-to-b from-ninja-950 to-ninja-900">
           <StreamGrid
             streams={streams}
             layoutMode={layoutMode}
