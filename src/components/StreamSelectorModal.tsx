@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Search, Plus, Check, Trash2, Tv } from 'lucide-react';
 import { StreamItem, siteConfig } from '../config/siteConfig';
+import { useLiveStatus } from '../hooks/useLiveStatus';
 
 interface StreamSelectorModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'konoha' | 'suna'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const { statuses } = useLiveStatus();
 
   if (!isOpen) return null;
 
@@ -237,6 +239,13 @@ export const StreamSelectorModal: React.FC<StreamSelectorModalProps> = ({
                         >
                           {stream.platform}
                         </span>
+
+                        {statuses[stream.id]?.isLive && (
+                          <span className="flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                            CANLI
+                          </span>
+                        )}
 
                         {stream.roleTag && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-ninja-800 text-slate-300 border border-ninja-700 font-medium">

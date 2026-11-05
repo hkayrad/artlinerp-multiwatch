@@ -26,6 +26,7 @@ export const App: React.FC = () => {
     setToast,
     selectVillage,
     addStream,
+    addMultipleStreams,
     removeStream,
     clearAllStreams,
     toggleMute,
@@ -65,6 +66,8 @@ export const App: React.FC = () => {
             onFocusStream={setFocusedStreamId}
             onOpenAddModal={() => setIsAddModalOpen(true)}
             onLoadVillage={(villageId) => selectVillage(villageId)}
+            onAddStream={addStream}
+            onAddMultipleStreams={addMultipleStreams}
           />
         </main>
 

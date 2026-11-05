@@ -151,6 +151,18 @@ export function useMultiwatch() {
     showToast(`"${newStream.name}" yayına eklendi`);
   }, [showToast]);
 
+  // Çoklu Yayın Yükle (Canlı yayınları topluca açmak için)
+  const addMultipleStreams = useCallback((items: StreamItem[]) => {
+    setStreams(items);
+    const muted = new Set<string>();
+    items.slice(1).forEach(s => muted.add(s.id));
+    setMutedStreams(muted);
+    setSoloStreamId(items[0]?.id || null);
+    setFocusedStreamId(items[0]?.id || null);
+    setActiveVillage('custom');
+    showToast(`${items.length} canlı yayın ekrana yüklendi`);
+  }, [showToast]);
+
   // Yayın Kaldır
   const removeStream = useCallback((id: string) => {
     setStreams(prev => prev.filter(s => s.id !== id));
@@ -262,6 +274,7 @@ export function useMultiwatch() {
     setToast,
     selectVillage,
     addStream,
+    addMultipleStreams,
     removeStream,
     clearAllStreams,
     toggleMute,

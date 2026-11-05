@@ -104,6 +104,15 @@ export const siteConfig: SiteConfig = {
           village: 'suna',
           roleTag: 'Onayli Genin',
           isDefaultActive: false,
+        },
+        {
+          id: 'zarafell',
+          name: 'Akiwata Fumiamochi',
+          channel: 'zarafell',
+          platform: 'kick',
+          village: 'suna',
+          roleTag: 'Onayli Genin',
+          isDefaultActive: false,
         }
       ],
     },
