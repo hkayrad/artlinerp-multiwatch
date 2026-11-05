@@ -60,39 +60,7 @@ export function useMultiwatch() {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(siteConfig.defaultLayout);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
   const [focusedStreamId, setFocusedStreamId] = useState<string | null>(null);
-
-  // Logo Yönetimi
-  const [serverLogo, setServerLogoState] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('artline_server_logo');
-      if (saved) return saved;
-    }
-    return siteConfig.serverLogo;
-  });
-
-  const [creatorLogo, setCreatorLogoState] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('artline_creator_logo');
-      if (saved) return saved;
-    }
-    return siteConfig.creatorLogo;
-  });
-
-  const setServerLogo = useCallback((url: string) => {
-    setServerLogoState(url);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('artline_server_logo', url);
-    }
-  }, []);
-
-  const setCreatorLogo = useCallback((url: string) => {
-    setCreatorLogoState(url);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('artline_creator_logo', url);
-    }
-  }, []);
 
   // Ses Durumu
   const [mutedStreams, setMutedStreams] = useState<Set<string>>(() => {
@@ -287,12 +255,6 @@ export function useMultiwatch() {
     toast,
     existingStreamChannels,
     isAllMuted,
-    serverLogo,
-    creatorLogo,
-    isLogoModalOpen,
-    setServerLogo,
-    setCreatorLogo,
-    setIsLogoModalOpen,
     setLayoutMode,
     setIsChatOpen,
     setIsAddModalOpen,

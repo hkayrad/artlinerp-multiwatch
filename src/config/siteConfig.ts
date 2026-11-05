@@ -20,14 +20,6 @@ export interface VillageConfig {
   streams: StreamItem[];
 }
 
-export interface LogoOption {
-  id: string;
-  name: string;
-  url: string;
-  category: 'server' | 'creator' | 'both';
-  description?: string;
-}
-
 export interface SiteConfig {
   serverName: string;
   serverSubname: string;
@@ -37,7 +29,6 @@ export interface SiteConfig {
   discordUrl: string;
   defaultLayout: 'auto' | '2x2' | 'theatre';
   defaultVillage: 'konoha' | 'suna' | 'all';
-  availableLogos: LogoOption[];
   villages: {
     konoha: VillageConfig;
     suna: VillageConfig;
@@ -67,73 +58,6 @@ export const siteConfig: SiteConfig = {
   
   defaultLayout: 'auto',
   defaultVillage: 'konoha',
-
-  // Seçilebilir Hazır Logo ve Görsel Listesi
-  availableLogos: [
-    {
-      id: 'artline-official',
-      name: 'Artline Sunucu Logosu (WebP)',
-      url: '/artline.webp',
-      category: 'server',
-      description: 'Artline Naruto RP resmi sunucu görseli',
-    },
-    {
-      id: 'hkd-official',
-      name: 'HKD Geliştirici Logosu (WebP)',
-      url: '/hkd.webp',
-      category: 'creator',
-      description: 'HKD resmi geliştirici profil görseli',
-    },
-    {
-      id: 'konoha-spiral',
-      name: 'Konohagakure Spirali',
-      url: '/logos/konoha-spiral.svg',
-      category: 'both',
-      description: 'Ateşin İradesi - Konoha yaprak amblemi',
-    },
-    {
-      id: 'suna-symbol',
-      name: 'Sunagakure Kum Saati',
-      url: '/logos/suna-symbol.svg',
-      category: 'both',
-      description: 'Çölün Rüzgarı - Kum Köyü amblemi',
-    },
-    {
-      id: 'anbu-mask',
-      name: 'ANBU Shinobi Maskesi',
-      url: '/logos/anbu-mask.svg',
-      category: 'both',
-      description: 'Özel kuvvetler porselen ninja maskesi',
-    },
-    {
-      id: 'uchiha-crest',
-      name: 'Uchiha Klan Yelpazesi',
-      url: '/logos/uchiha-crest.svg',
-      category: 'both',
-      description: 'Geleneksel kırmızı-beyaz Uchiha amblemi',
-    },
-    {
-      id: 'akatsuki-cloud',
-      name: 'Akatsuki Kızıl Bulutu',
-      url: '/logos/akatsuki-cloud.svg',
-      category: 'both',
-      description: 'Kırmızı Akatsuki fırtına bulutu amblemi',
-    },
-    {
-      id: 'shinobi-kunai',
-      name: 'Shinobi Kunai Rozeti',
-      url: '/logos/shinobi-kunai.svg',
-      category: 'creator',
-      description: 'Geliştirici çakra kunai rozeti',
-    },
-    {
-      id: 'fuma-shuriken',
-      name: 'Fuma Shuriken Rozeti',
-      url: '/logos/fuma-shuriken.svg',
-      category: 'both',
-      description: 'Dört bıçaklı dev fuma shurikeni',
-    },
-  ],
 
   villages: {
     konoha: {

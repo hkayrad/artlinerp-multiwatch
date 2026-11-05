@@ -49,8 +49,15 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
     if (currentStream.platform === 'twitch') {
       return `https://www.twitch.tv/embed/${encodeURIComponent(currentStream.channel)}/chat?parent=${parentDomain}&darkpopout=true`;
     }
-    // Kick Chat URL
-    return `https://kick.com/${encodeURIComponent(currentStream.channel)}/chatroom`;
+    // Kick Canlı Sohbet Gömme (chat.kick.cx - Gerçek web chat arayüzü)
+    return `https://chat.kick.cx/embed/${encodeURIComponent(currentStream.channel)}`;
+  };
+
+  const getPopoutUrl = () => {
+    if (currentStream.platform === 'twitch') {
+      return `https://www.twitch.tv/popout/${encodeURIComponent(currentStream.channel)}/chat`;
+    }
+    return `https://kick.com/popout/${encodeURIComponent(currentStream.channel)}/chat`;
   };
 
   return (
@@ -67,15 +74,11 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
 
         <div className="flex items-center gap-1">
           <a
-            href={
-              currentStream.platform === 'twitch'
-                ? `https://twitch.tv/${currentStream.channel}`
-                : `https://kick.com/${currentStream.channel}`
-            }
+            href={getPopoutUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            title="Kanala Git"
-            className="p-1 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-ninja-800"
+            title="Sohbeti Ayrı Açılır Pencerede Aç (Kendi hesabınızla yazışmak için)"
+            className="p-1 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-ninja-800 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </a>

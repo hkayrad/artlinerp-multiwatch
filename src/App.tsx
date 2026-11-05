@@ -4,8 +4,7 @@ import { Header } from './components/Header';
 import { StreamGrid } from './components/StreamGrid';
 import { ChatDrawer } from './components/ChatDrawer';
 import { BottomBar } from './components/BottomBar';
-import { AddStreamModal } from './components/AddStreamModal';
-import { LogoSelectorModal } from './components/LogoSelectorModal';
+import { StreamSelectorModal } from './components/StreamSelectorModal';
 import { Toast } from './components/Toast';
 
 export const App: React.FC = () => {
@@ -15,21 +14,14 @@ export const App: React.FC = () => {
     layoutMode,
     isChatOpen,
     isAddModalOpen,
-    isLogoModalOpen,
-    serverLogo,
-    creatorLogo,
     mutedStreams,
     soloStreamId,
     focusedStreamId,
     toast,
-    existingStreamChannels,
     isAllMuted,
     setLayoutMode,
     setIsChatOpen,
     setIsAddModalOpen,
-    setIsLogoModalOpen,
-    setServerLogo,
-    setCreatorLogo,
     setFocusedStreamId,
     setToast,
     selectVillage,
@@ -51,9 +43,6 @@ export const App: React.FC = () => {
         streamCount={streams.length}
         layoutMode={layoutMode}
         isChatOpen={isChatOpen}
-        serverLogo={serverLogo}
-        creatorLogo={creatorLogo}
-        onOpenLogoModal={() => setIsLogoModalOpen(true)}
         onSelectVillage={selectVillage}
         onChangeLayout={setLayoutMode}
         onToggleChat={() => setIsChatOpen(prev => !prev)}
@@ -99,22 +88,15 @@ export const App: React.FC = () => {
         onShareLink={shareLink}
       />
 
-      {/* Yayın Ekleme Modalı */}
-      <AddStreamModal
+      {/* Yayın Listesi ve Seçim Modalı */}
+      <StreamSelectorModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        activeStreams={streams}
         onAddStream={addStream}
-        existingStreamChannels={existingStreamChannels}
-      />
-
-      {/* Logo ve Görsel Seçici Modal */}
-      <LogoSelectorModal
-        isOpen={isLogoModalOpen}
-        onClose={() => setIsLogoModalOpen(false)}
-        currentServerLogo={serverLogo}
-        currentCreatorLogo={creatorLogo}
-        onSelectServerLogo={setServerLogo}
-        onSelectCreatorLogo={setCreatorLogo}
+        onRemoveStream={removeStream}
+        onSelectVillage={selectVillage}
+        onClearAll={clearAllStreams}
       />
 
       {/* Bildirim Toast'ı */}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StreamItem } from '../config/siteConfig';
 import { StreamPlayer } from './StreamPlayer';
-import { Tv, Plus, Sparkles } from 'lucide-react';
+import { Tv, Sparkles } from 'lucide-react';
 
 export type LayoutMode = 'auto' | '2x2' | 'theatre';
 
@@ -71,10 +71,10 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
 
           <button
             onClick={onOpenAddModal}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-ninja-800 hover:bg-ninja-700 border border-ninja-600 text-slate-200 font-semibold transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-600/20"
           >
-            <Plus className="w-4 h-4 text-orange-400" />
-            <span>Özel Yayın Ekle</span>
+            <Tv className="w-4 h-4" />
+            <span>Yayın Listesinden Seç</span>
           </button>
         </div>
       </div>
