@@ -229,13 +229,13 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
           </div>
 
           {/* Yayıncı İstek & Discord İletişim */}
-          <div className="mt-6 p-3 rounded-xl bg-ninja-900/60 border border-ninja-800/80 flex items-center justify-center gap-2 text-xs text-slate-400">
-            <span>💬</span>
-            <span>
-              {siteConfig.requestStreamerNotice}:{' '}
-              <strong className="text-orange-400 font-mono font-bold">
-                {siteConfig.creatorDiscord}
-              </strong>
+          <div className="mt-8 p-3.5 rounded-2xl bg-gradient-to-r from-ninja-900 via-orange-950/20 to-ninja-900 border border-orange-500/30 flex flex-wrap items-center justify-center gap-3 text-xs shadow-lg max-w-xl mx-auto">
+            <span className="text-lg">📢</span>
+            <span className="text-slate-200 font-medium">
+              {siteConfig.requestStreamerNotice}:
+            </span>
+            <span className="font-mono font-bold text-orange-400 bg-ninja-950 px-2.5 py-1 rounded-lg border border-orange-500/40">
+              Discord: {siteConfig.creatorDiscord}
             </span>
           </div>
         </div>

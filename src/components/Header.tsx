@@ -1,5 +1,5 @@
-import React from 'react';
-import { MessageSquare, Share2, LayoutGrid, LayoutTemplate, Disc as DiscordIcon, ExternalLink, Tv } from 'lucide-react';
+import React, { useState } from 'react';
+import { MessageSquare, Share2, LayoutGrid, LayoutTemplate, Disc as DiscordIcon, ExternalLink, Tv, Copy, Check, X } from 'lucide-react';
 import { siteConfig } from '../config/siteConfig';
 import { LayoutMode } from './StreamGrid';
 
@@ -26,6 +26,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAddModal,
   onShareLink,
 }) => {
+  const [copiedDiscord, setCopiedDiscord] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+
   return (
     <header className="bg-ninja-900/95 backdrop-blur-md border-b border-ninja-700/70 sticky top-0 z-30 select-none shadow-xl">
       <div className="max-w-[1920px] mx-auto px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
@@ -205,6 +208,56 @@ export const Header: React.FC<HeaderProps> = ({
           </a>
         </div>
       </div>
+
+      {/* Üst Duyuru / Yayıncı Ekleme & Discord İletişim Şeridi */}
+      {!isBannerDismissed && (
+        <div className="bg-gradient-to-r from-orange-950/70 via-ninja-900 to-orange-950/70 border-t border-orange-500/30 px-3 py-1.5 text-xs text-slate-200">
+          <div className="max-w-[1920px] mx-auto flex items-center justify-between gap-2">
+            <div className="flex-1 flex items-center justify-center flex-wrap gap-2 text-center min-w-0">
+              <span className="text-base shrink-0">📢</span>
+              <span className="font-semibold text-slate-100 text-[11px] sm:text-xs">
+                {siteConfig.requestStreamerNotice}:
+              </span>
+              <div className="inline-flex items-center gap-1.5 bg-ninja-950 px-2 py-0.5 rounded-md border border-orange-500/40 shadow-sm">
+                <span className="font-mono font-extrabold text-orange-400 text-[11px] sm:text-xs">
+                  Discord: {siteConfig.creatorDiscord}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(siteConfig.creatorDiscord);
+                    setCopiedDiscord(true);
+                    setTimeout(() => setCopiedDiscord(false), 2000);
+                  }}
+                  className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 hover:bg-orange-600 text-slate-300 hover:text-white transition-colors flex items-center gap-1 active:scale-95"
+                  title="Discord kullanıcı adını kopyala"
+                >
+                  {copiedDiscord ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      <span className="text-emerald-400 font-bold">Kopyalandı!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 text-slate-400" />
+                      <span>Kopyala</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsBannerDismissed(true)}
+              className="text-slate-400 hover:text-slate-200 p-1 rounded hover:bg-ninja-800 transition-colors shrink-0"
+              title="Duyuruyu Gizle"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
