@@ -95,6 +95,15 @@ export const siteConfig: SiteConfig = {
           roleTag: 'Tokubetsu Chunin',
           isDefaultActive: false,
         },
+        {
+          id: 'telcaris',
+          name: 'Kiryu Arata',
+          channel: 'telcaris',
+          platform: 'kick',
+          village: 'konoha',
+          roleTag: 'Onayli Genin',
+          isDefaultActive: false,
+        },
       ],
     },
     suna: {
@@ -131,7 +140,7 @@ export const siteConfig: SiteConfig = {
           village: 'suna',
           roleTag: 'Tokubetsu Chunin',
           isDefaultActive: false,
-        }
+        },
       ],
     },
   },

@@ -1,0 +1,26 @@
+# ----------------------------------------------------------------------
+# 1. Google ve Arama Motoru İndeksleme Engeli (X-Robots-Tag)
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+    Header set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
+</IfModule>
+
+# ----------------------------------------------------------------------
+# 2. AI Botları ve Web Kazıyıcıları (Scrapers) Engelleme
+# ----------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Bilinen AI ve veri madenciliği botlarını 403 Forbidden ile engelle
+    RewriteCond %{HTTP_USER_AGENT} (Google-Extended|GPTBot|ChatGPT-User|CCBot|anthropic-ai|ClaudeBot|Claude-Web|Bytespider|PerplexityBot|Amazonbot|FacebookBot|cohere-ai|Diffbot) [NC]
+    RewriteRule ^ - [F,L]
+
+    # ------------------------------------------------------------------
+    # 3. React / Vite SPA Yönlendirmesi (Single Page Application)
+    # ------------------------------------------------------------------
+    RewriteBase /
+    RewriteRule ^index\.html$ - [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . /index.html [L]
+</IfModule>
