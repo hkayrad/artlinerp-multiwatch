@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, MessageSquare, Share2, LayoutGrid, LayoutTemplate, Disc as DiscordIcon, ExternalLink } from 'lucide-react';
+import { Plus, MessageSquare, Share2, LayoutGrid, LayoutTemplate, Disc as DiscordIcon, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { siteConfig } from '../config/siteConfig';
 import { LayoutMode } from './StreamGrid';
 
@@ -8,6 +8,9 @@ interface HeaderProps {
   streamCount: number;
   layoutMode: LayoutMode;
   isChatOpen: boolean;
+  serverLogo?: string;
+  creatorLogo?: string;
+  onOpenLogoModal?: () => void;
   onSelectVillage: (village: 'konoha' | 'suna' | 'all') => void;
   onChangeLayout: (layout: LayoutMode) => void;
   onToggleChat: () => void;
@@ -20,6 +23,9 @@ export const Header: React.FC<HeaderProps> = ({
   streamCount,
   layoutMode,
   isChatOpen,
+  serverLogo = siteConfig.serverLogo,
+  creatorLogo = siteConfig.creatorLogo,
+  onOpenLogoModal,
   onSelectVillage,
   onChangeLayout,
   onToggleChat,
@@ -31,20 +37,26 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-[1920px] mx-auto px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
         {/* Sol Taraf: Çift Logo ve Sunucu Bilgileri */}
         <div className="flex items-center gap-3">
-          {/* 1. Sunucu Logosu */}
+          {/* 1. Sunucu Logosu (Tıklanabilir Logo Seçici) */}
           <div className="flex items-center gap-2.5">
-            <div className="relative group">
+            <button
+              type="button"
+              onClick={onOpenLogoModal}
+              title="Logoları ve görselleri değiştirmek için tıklayın"
+              className="relative group cursor-pointer focus:outline-none"
+            >
               <img
-                src={siteConfig.serverLogo}
+                src={serverLogo}
                 alt={siteConfig.serverName}
-                className="w-10 h-10 object-contain rounded-xl p-0.5 bg-ninja-950 border border-orange-500/40 shadow-lg shadow-orange-500/10 group-hover:border-orange-500 transition-colors"
+                className="w-10 h-10 object-contain rounded-xl p-0.5 bg-ninja-950 border border-orange-500/40 shadow-lg shadow-orange-500/10 group-hover:border-orange-500 transition-all group-hover:scale-105"
                 onError={(e) => {
-                  // Resim yüklenemezse gizle veya fallback göster
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
-              <div className="absolute inset-0 rounded-xl bg-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-            </div>
+              <div className="absolute inset-0 rounded-xl bg-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <ImageIcon className="w-4 h-4 text-white drop-shadow" />
+              </div>
+            </button>
 
             <div className="hidden xs:flex flex-col">
               <div className="flex items-center gap-1.5">
@@ -68,20 +80,25 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="hidden sm:block h-7 w-[1px] bg-ninja-700/80 mx-1" />
 
-          {/* 2. Geliştirici / Kurucu Logosu */}
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 bg-ninja-950/60 px-2.5 py-1 rounded-lg border border-ninja-800">
+          {/* 2. Geliştirici / Kurucu Logosu (Tıklanabilir) */}
+          <button
+            type="button"
+            onClick={onOpenLogoModal}
+            title="Geliştirici logosunu değiştirmek için tıklayın"
+            className="hidden sm:flex items-center gap-2 text-xs text-slate-400 bg-ninja-950/60 hover:bg-ninja-950 px-2.5 py-1 rounded-lg border border-ninja-800 hover:border-emerald-500/50 transition-all cursor-pointer group"
+          >
             <img
-              src={siteConfig.creatorLogo}
+              src={creatorLogo}
               alt={siteConfig.creatorName}
               className="w-5 h-5 object-contain rounded-md"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
-            <span className="font-medium text-slate-300">
+            <span className="font-medium text-slate-300 group-hover:text-emerald-400 transition-colors">
               {siteConfig.creatorName}
             </span>
-          </div>
+          </button>
         </div>
 
         {/* Orta Kısım: Konohagakure ve Sunagakure POV Seçici Butonlar */}

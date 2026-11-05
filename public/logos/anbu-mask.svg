@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- ANBU Porcelain Mask Shape -->
+  <path d="M50 18 C30 18, 22 36, 22 55 C22 75, 36 88, 50 88 C64 88, 78 75, 78 55 C78 36, 70 18, 50 18 Z" fill="#0d131d" stroke="#f1f5f9" stroke-width="3" />
+  
+  <!-- Red Facial Markings -->
+  <path d="M28 42 Q38 45 42 38" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round" fill="none" />
+  <path d="M72 42 Q62 45 58 38" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round" fill="none" />
+  
+  <!-- Slanted Eyes -->
+  <path d="M34 52 Q42 50 44 54" stroke="#070a0f" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M66 52 Q58 50 56 54" stroke="#070a0f" stroke-width="4" stroke-linecap="round" fill="none" />
+  
+  <!-- Cheek Triangles -->
+  <polygon points="30,62 36,60 33,68" fill="#ef4444" />
+  <polygon points="70,62 64,60 67,68" fill="#ef4444" />
+  
+  <!-- Forehead Mark -->
+  <circle cx="50" cy="30" r="3.5" fill="#ef4444" />
+</svg>

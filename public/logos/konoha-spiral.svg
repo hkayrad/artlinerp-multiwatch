@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <circle cx="50" cy="50" r="46" fill="#0d131d" stroke="#10b981" stroke-width="3" />
+  <circle cx="50" cy="50" r="40" stroke="#059669" stroke-width="1.5" stroke-dasharray="4 2" />
+  <!-- Konoha Leaf Spiral -->
+  <path d="M50 25 C64 25, 75 36, 75 50 C75 64, 64 75, 50 75 C36 75, 25 64, 25 50 C25 40, 31 31, 40 27" stroke="#10b981" stroke-width="5" stroke-linecap="round" fill="none" />
+  <path d="M50 35 C58 35, 65 42, 65 50 C65 58, 58 65, 50 65 C42 65, 35 58, 35 50" stroke="#34d399" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M50 45 C53 45, 55 47, 55 50 C55 53, 53 55, 50 55" stroke="#6ee7b7" stroke-width="3" stroke-linecap="round" fill="none" />
+  <!-- Leaf Arrow Stem -->
+  <path d="M72 45 L82 50 L72 55" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+</svg>

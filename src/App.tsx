@@ -5,6 +5,7 @@ import { StreamGrid } from './components/StreamGrid';
 import { ChatDrawer } from './components/ChatDrawer';
 import { BottomBar } from './components/BottomBar';
 import { AddStreamModal } from './components/AddStreamModal';
+import { LogoSelectorModal } from './components/LogoSelectorModal';
 import { Toast } from './components/Toast';
 
 export const App: React.FC = () => {
@@ -14,6 +15,9 @@ export const App: React.FC = () => {
     layoutMode,
     isChatOpen,
     isAddModalOpen,
+    isLogoModalOpen,
+    serverLogo,
+    creatorLogo,
     mutedStreams,
     soloStreamId,
     focusedStreamId,
@@ -23,6 +27,9 @@ export const App: React.FC = () => {
     setLayoutMode,
     setIsChatOpen,
     setIsAddModalOpen,
+    setIsLogoModalOpen,
+    setServerLogo,
+    setCreatorLogo,
     setFocusedStreamId,
     setToast,
     selectVillage,
@@ -44,6 +51,9 @@ export const App: React.FC = () => {
         streamCount={streams.length}
         layoutMode={layoutMode}
         isChatOpen={isChatOpen}
+        serverLogo={serverLogo}
+        creatorLogo={creatorLogo}
+        onOpenLogoModal={() => setIsLogoModalOpen(true)}
         onSelectVillage={selectVillage}
         onChangeLayout={setLayoutMode}
         onToggleChat={() => setIsChatOpen(prev => !prev)}
@@ -95,6 +105,16 @@ export const App: React.FC = () => {
         onClose={() => setIsAddModalOpen(false)}
         onAddStream={addStream}
         existingStreamChannels={existingStreamChannels}
+      />
+
+      {/* Logo ve Görsel Seçici Modal */}
+      <LogoSelectorModal
+        isOpen={isLogoModalOpen}
+        onClose={() => setIsLogoModalOpen(false)}
+        currentServerLogo={serverLogo}
+        currentCreatorLogo={creatorLogo}
+        onSelectServerLogo={setServerLogo}
+        onSelectCreatorLogo={setCreatorLogo}
       />
 
       {/* Bildirim Toast'ı */}

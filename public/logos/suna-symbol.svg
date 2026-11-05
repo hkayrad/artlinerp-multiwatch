@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <circle cx="50" cy="50" r="46" fill="#0d131d" stroke="#eab308" stroke-width="3" />
+  <circle cx="50" cy="50" r="40" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="4 2" />
+  <!-- Sunagakure Hourglass / Sand Eye Symbol -->
+  <path d="M30 30 L70 30 L50 50 L70 70 L30 70 L50 50 Z" stroke="#eab308" stroke-width="4" stroke-linejoin="round" fill="none" />
+  <circle cx="50" cy="50" r="5" fill="#fde047" />
+  <!-- Sunagakure Wind Whisps -->
+  <path d="M25 50 Q35 45 42 50" stroke="#ca8a04" stroke-width="2.5" stroke-linecap="round" fill="none" />
+  <path d="M75 50 Q65 55 58 50" stroke="#ca8a04" stroke-width="2.5" stroke-linecap="round" fill="none" />
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Outer Chakra Circle -->
+  <circle cx="50" cy="50" r="44" stroke="#a855f7" stroke-width="2" stroke-dasharray="5 3" />
+  
+  <!-- Four-Bladed Fuma Shuriken -->
+  <path d="M50 14 L55 42 L86 50 L58 55 L50 86 L45 58 L14 50 L42 45 Z" fill="#9333ea" stroke="#c084fc" stroke-width="2" />
+  <circle cx="50" cy="50" r="8" fill="#0d131d" stroke="#c084fc" stroke-width="2.5" />
+</svg>

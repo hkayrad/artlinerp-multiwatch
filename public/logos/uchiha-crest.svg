@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Outer Ring -->
+  <circle cx="50" cy="50" r="46" fill="#0d131d" stroke="#ef4444" stroke-width="2.5" />
+  
+  <!-- Uchiha Fan Top Half (Red) -->
+  <path d="M26 48 A24 24 0 0 1 74 48 Z" fill="#ef4444" stroke="#ef4444" stroke-width="2" />
+  
+  <!-- Uchiha Fan Bottom Half (White) -->
+  <path d="M26 48 A24 24 0 0 0 74 48 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2" />
+  
+  <!-- Fan Handle (White Stem) -->
+  <rect x="47" y="70" width="6" height="15" rx="2" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+</svg>
