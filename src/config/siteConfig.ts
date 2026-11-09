@@ -145,6 +145,15 @@ export const siteConfig: SiteConfig = {
           roleTag: 'Tokubetsu Chunin',
           isDefaultActive: false,
         },
+        {
+          id: 'kazedreax',
+          name: 'Shiki Ayatsuri',
+          channel: 'kazedreax',
+          platform: 'kick',
+          village: 'suna',
+          roleTag: 'Chunin',
+          isDefaultActive: false,
+        }
       ],
     },
   },
