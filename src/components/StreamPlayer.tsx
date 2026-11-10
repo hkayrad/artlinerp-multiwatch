@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, RotateCw, X, Maximize2, Headphones, Expand } from 'lucide-react';
 import { StreamItem } from '../config/siteConfig';
 import { getParentDomain } from '../utils/streamUtils';
@@ -14,6 +14,29 @@ interface StreamPlayerProps {
   onFocus?: (id: string) => void;
 }
 
+function loadTwitchScript(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (window.Twitch?.Player) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[src="https://player.twitch.tv/js/embed/v1.js"]');
+    if (existing) {
+      if (window.Twitch?.Player) {
+        resolve();
+      } else {
+        existing.addEventListener('load', () => resolve());
+        existing.addEventListener('error', () => reject());
+      }
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://player.twitch.tv/js/embed/v1.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject();
+    document.head.appendChild(script);
+  });
+}
+
 export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
   stream,
   isMuted,
@@ -26,18 +49,74 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
 }) => {
   const [reloadKey, setReloadKey] = useState(0);
   const [isControlsVisible, setIsControlsVisible] = useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoWrapperRef = useRef<HTMLDivElement>(null);
+  const twitchPlayerRef = useRef<TwitchPlayerInstance | null>(null);
 
   const parentDomain = getParentDomain();
+  const isKick = stream.platform === 'kick';
 
-  // Platform iframe URL üretimi (ses durumu değiştiğinde player güncellenir)
-  const embedUrl = useMemo(() => {
-    if (stream.platform === 'twitch') {
-      return `https://player.twitch.tv/?channel=${encodeURIComponent(stream.channel)}&parent=${parentDomain}&muted=${isMuted ? 'true' : 'false'}&autoplay=true`;
+  // 1. Twitch: Resmi JavaScript SDK ile kesintisiz (refresh olmadan) ses kontrolü
+  useEffect(() => {
+    if (stream.platform !== 'twitch' || !videoWrapperRef.current) return;
+
+    let isCancelled = false;
+
+    loadTwitchScript().then(() => {
+      if (isCancelled || !videoWrapperRef.current || !window.Twitch?.Player) return;
+
+      if (twitchPlayerRef.current) {
+        try {
+          twitchPlayerRef.current.destroy();
+        } catch {
+          // ignore
+        }
+        twitchPlayerRef.current = null;
+      }
+
+      videoWrapperRef.current.innerHTML = '';
+
+      const player = new window.Twitch.Player(videoWrapperRef.current, {
+        channel: stream.channel,
+        parent: [parentDomain],
+        muted: isMuted,
+        autoplay: true,
+        width: '100%',
+        height: '100%',
+      });
+
+      twitchPlayerRef.current = player;
+    }).catch(() => {});
+
+    return () => {
+      isCancelled = true;
+      if (twitchPlayerRef.current) {
+        try {
+          twitchPlayerRef.current.destroy();
+        } catch {
+          // ignore
+        }
+        twitchPlayerRef.current = null;
+      }
+    };
+  }, [stream.platform, stream.channel, parentDomain, reloadKey]);
+
+  // Twitch ses durumunu yenileme olmadan canlı güncelle
+  useEffect(() => {
+    if (stream.platform === 'twitch' && twitchPlayerRef.current) {
+      try {
+        twitchPlayerRef.current.setMuted(isMuted);
+      } catch {
+        // ignore
+      }
     }
-    // Kick embed player
+  }, [isMuted, stream.platform]);
+
+  // 2. Kick: Resmi harici JS API/postMessage bulunmadığından URL query parametresi ile ses güncelleme
+  const kickEmbedUrl = useMemo(() => {
+    if (stream.platform !== 'kick') return '';
     return `https://player.kick.com/${encodeURIComponent(stream.channel)}?autoplay=true&muted=${isMuted ? 'true' : 'false'}`;
-  }, [stream.platform, stream.channel, parentDomain, reloadKey, isMuted]);
+  }, [stream.platform, stream.channel, reloadKey, isMuted]);
 
   const handleReload = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -53,8 +132,6 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
       containerRef.current.requestFullscreen().catch(() => {});
     }
   };
-
-  const isKick = stream.platform === 'kick';
 
   return (
     <div
@@ -120,7 +197,13 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
             {/* Tek Ses (Solo Audio) */}
             <button
               onClick={() => onSoloAudio(stream.id)}
-              title={isSolo ? "Tek Ses Aktif (Diğerleri susturuldu)" : "Sesi Yalnızca Buraya Ver (Diğerlerini sustur)"}
+              title={
+                isSolo
+                  ? "Tek Ses Aktif (Diğerleri susturuldu)"
+                  : isKick
+                  ? "Sesi Yalnızca Buraya Ver (Kick için yayın anlık yenilenebilir)"
+                  : "Sesi Yalnızca Buraya Ver (Diğerlerini sustur)"
+              }
               className={`p-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors ${
                 isSolo
                   ? 'bg-emerald-500 text-slate-950 font-bold'
@@ -134,7 +217,15 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
             {/* Ses Aç / Kapa */}
             <button
               onClick={() => onToggleMute(stream.id)}
-              title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
+              title={
+                isMuted
+                  ? isKick
+                    ? "Sesi Aç (Kick kısıtlaması nedeniyle yenilenebilir; kesintisiz ses için player içi ses çubuğunu da kullanabilirsiniz)"
+                    : "Sesi Aç"
+                  : isKick
+                  ? "Sesi Kapat (Kick kısıtlaması nedeniyle yenilenebilir; kesintisiz ses için player içi ses çubuğunu da kullanabilirsiniz)"
+                  : "Sesi Kapat"
+              }
               className={`p-1.5 rounded-lg transition-colors ${
                 isMuted
                   ? 'text-rose-400 hover:bg-rose-500/10'
@@ -175,15 +266,22 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
 
         {/* Video Container (16:9 ratio, fills remaining height) */}
         <div className="relative flex-1 w-full h-full min-h-0 bg-ninja-950 overflow-hidden">
-          <iframe
-            key={`${stream.channel}-${reloadKey}`}
-            src={embedUrl}
-            title={`${stream.platform} - ${stream.channel}`}
-            className="w-full h-full border-0 absolute inset-0"
-            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-            allowFullScreen
-            loading="eager"
-          />
+          {stream.platform === 'twitch' ? (
+            <div
+              ref={videoWrapperRef}
+              className="w-full h-full absolute inset-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0"
+            />
+          ) : (
+            <iframe
+              key={`${stream.channel}-${reloadKey}`}
+              src={kickEmbedUrl}
+              title={`${stream.platform} - ${stream.channel}`}
+              className="w-full h-full border-0 absolute inset-0"
+              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+              allowFullScreen
+              loading="eager"
+            />
+          )}
         </div>
       </div>
     </div>
