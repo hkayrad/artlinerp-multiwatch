@@ -30,19 +30,14 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
 
   const parentDomain = getParentDomain();
 
-  // İlk yüklemede belirlenen ses durumu referansı
-  // ÖNEMLİ: Iframe 'src' URL'i 'isMuted' state değişiminde yeniden üretilmemelidir.
-  // Aksi halde tarayıcı 'src' değiştiği için yayını baştan yükler (refresh).
-  const initialMutedRef = React.useRef(isMuted);
-
-  // Platform iframe URL üretimi (tamamen stabil - ses değişiminde ASLA yeniden yüklenmez)
+  // Platform iframe URL üretimi (ses durumu değiştiğinde player güncellenir)
   const embedUrl = useMemo(() => {
     if (stream.platform === 'twitch') {
-      return `https://player.twitch.tv/?channel=${encodeURIComponent(stream.channel)}&parent=${parentDomain}&muted=${initialMutedRef.current ? 'true' : 'false'}&autoplay=true`;
+      return `https://player.twitch.tv/?channel=${encodeURIComponent(stream.channel)}&parent=${parentDomain}&muted=${isMuted ? 'true' : 'false'}&autoplay=true`;
     }
     // Kick embed player
-    return `https://player.kick.com/${encodeURIComponent(stream.channel)}?autoplay=true&muted=${initialMutedRef.current ? 'true' : 'false'}`;
-  }, [stream.platform, stream.channel, parentDomain, reloadKey]);
+    return `https://player.kick.com/${encodeURIComponent(stream.channel)}?autoplay=true&muted=${isMuted ? 'true' : 'false'}`;
+  }, [stream.platform, stream.channel, parentDomain, reloadKey, isMuted]);
 
   const handleReload = (e: React.MouseEvent) => {
     e.stopPropagation();
