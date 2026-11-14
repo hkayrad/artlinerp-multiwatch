@@ -211,7 +211,7 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               onClick={() => onSelectVillage('all', 'live')}
               title="Her iki köyün canlı POV yayınlarını aç"
-              className={`hidden md:flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors ${
+              className={`hidden sm:flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors ${
                 activeVillage === 'all'
                   ? 'bg-orange-500 text-white font-bold'
                   : 'text-slate-300 hover:text-orange-400 hover:bg-ninja-800'
@@ -236,6 +236,7 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               onClick={() => setIsPresetMenuOpen(prev => !prev)}
               aria-expanded={isPresetMenuOpen}
+              aria-label="Tüm köy listesi seçenekleri"
               title="Çevrimdışı kanallar dahil tüm köy listesini yükle"
               className="h-7 px-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-ninja-800 transition-colors"
             >
@@ -308,19 +309,22 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               onClick={() => onChangeLayout('auto')}
               title="Otomatik Izgara"
-              className={`flex items-center gap-1 h-7 px-2 rounded-md text-xs transition-colors ${
+              aria-label="Otomatik Izgara düzeni"
+              className={`flex items-center gap-1.5 h-7 px-2 rounded-md text-[11px] transition-colors ${
                 layoutMode === 'auto'
                   ? 'bg-ninja-800 text-orange-400 font-semibold'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <LayoutGrid className="w-3.5 h-3.5" />
+              <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden xl:inline">Izgara</span>
             </button>
             <button
               type="button"
               disabled={is2x2Disabled}
               onClick={() => onChangeLayout('2x2')}
               title={is2x2Disabled ? "4'ten fazla yayın açıkken 2x2 kullanılamaz" : '2x2 Izgara'}
+              aria-label="2x2 Izgara düzeni"
               className={`flex items-center h-7 px-2 rounded-md font-mono text-[11px] font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                 layoutMode === '2x2'
                   ? 'bg-ninja-800 text-orange-400'
@@ -333,13 +337,15 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               onClick={() => onChangeLayout('theatre')}
               title="Tiyatro / Odak Modu"
-              className={`flex items-center gap-1 h-7 px-2 rounded-md text-xs transition-colors ${
+              aria-label="Tiyatro düzeni"
+              className={`flex items-center gap-1.5 h-7 px-2 rounded-md text-[11px] transition-colors ${
                 layoutMode === 'theatre'
                   ? 'bg-ninja-800 text-orange-400 font-semibold'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <LayoutTemplate className="w-3.5 h-3.5" />
+              <LayoutTemplate className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden xl:inline">Tiyatro</span>
             </button>
           </div>
 
@@ -348,14 +354,15 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={isAllMuted ? onUnmuteAll : onMuteAll}
-              title={isAllMuted ? 'Tüm yayınların sesini aç' : 'Tüm yayınları sustur'}
+              title={isAllMuted ? 'Tüm yayınların sesini aç (M)' : 'Tüm yayınları sustur (M)'}
+              aria-label={isAllMuted ? 'Tüm yayınların sesini aç' : 'Tüm yayınları sustur'}
               className={`hidden md:inline-flex items-center justify-center h-8 w-8 rounded-lg border transition-colors ${
                 isAllMuted
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                  : 'bg-ninja-950 border-ninja-700/80 text-slate-300 hover:text-rose-400 hover:border-rose-500/40'
+                  ? 'bg-rose-500/15 border-rose-500/40 text-rose-300 hover:bg-rose-500/25'
+                  : 'bg-ninja-950 border-ninja-700/80 text-emerald-400 hover:text-rose-400 hover:border-rose-500/40'
               }`}
             >
-              {isAllMuted ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              {isAllMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
           )}
 
@@ -365,6 +372,7 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               onClick={onClearAll}
               title="Tüm yayınları ekrandan kaldır"
+              aria-label="Tüm yayınları ekrandan kaldır"
               className="hidden md:inline-flex items-center justify-center h-8 w-8 rounded-lg bg-ninja-950 border border-ninja-700/80 text-slate-400 hover:text-rose-400 hover:border-rose-500/40 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
@@ -397,7 +405,8 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onToggleChat}
             aria-expanded={isChatOpen}
-            title={isChatOpen ? 'Sohbeti gizle' : 'Sohbeti göster'}
+            title={isChatOpen ? 'Sohbeti gizle (C)' : 'Sohbeti göster (C)'}
+            aria-label={isChatOpen ? 'Sohbeti gizle' : 'Sohbeti göster'}
             className={`flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold border transition-colors ${
               isChatOpen
                 ? 'bg-ninja-800 text-purple-300 border-purple-500/50'
@@ -405,7 +414,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Sohbet</span>
+            <span className="hidden lg:inline">Sohbet</span>
           </button>
 
           {/* Share URL */}
@@ -413,10 +422,11 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onShareLink}
             title="Yayın düzeni URL bağlantısını kopyala"
+            aria-label="Yayın düzeni URL bağlantısını kopyala"
             className="hidden sm:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold bg-ninja-950 hover:bg-ninja-800 text-slate-300 border border-ninja-700/80 hover:text-white transition-colors"
           >
             <Share2 className="w-3.5 h-3.5 text-sky-400" />
-            <span className="hidden xl:inline">Paylaş</span>
+            <span className="hidden lg:inline">Paylaş</span>
           </button>
 
           {/* Overflow Menu (Mobile controls + Community & Creator info) */}
@@ -425,7 +435,8 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               onClick={() => setIsMoreOpen(prev => !prev)}
               aria-expanded={isMoreOpen}
-              title="Diğer seçenekler ve topluluk bağlantıları"
+              aria-label="Diğer seçenekler ve kısayollar"
+              title="Diğer seçenekler ve kısayollar"
               className={`flex items-center justify-center h-8 w-8 rounded-lg border transition-colors ${
                 isMoreOpen
                   ? 'bg-ninja-800 border-ninja-600 text-white'

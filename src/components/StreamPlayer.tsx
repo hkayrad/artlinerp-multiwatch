@@ -19,6 +19,7 @@ import { getParentDomain } from '../utils/streamUtils';
 
 interface StreamPlayerProps {
   stream: StreamItem;
+  slotNumber?: number;
   liveStatus?: LiveStatusInfo;
   isMuted: boolean;
   isSolo: boolean;
@@ -66,6 +67,7 @@ function loadTwitchScript(): Promise<void> {
 
 export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
   stream,
+  slotNumber,
   liveStatus,
   isMuted,
   isSolo,
@@ -222,10 +224,18 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
               : ''
           }`}
         >
-          {/* Left: Drag Handle + Platform + Streamer + Live/Viewers + Role */}
+          {/* Left: Drag Handle + Slot + Platform + Streamer + Live/Viewers + Role */}
           <div className="flex items-center gap-1.5 min-w-0">
             {canDrag && (
               <GripVertical className="w-3 h-3 text-slate-500 shrink-0 hidden sm:inline" />
+            )}
+            {typeof slotNumber === 'number' && (
+              <span
+                className="hidden sm:inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded bg-ninja-800 text-[10px] font-bold text-slate-400 border border-ninja-700/80 shrink-0"
+                title={`Klavye kısayolu: ${slotNumber} (Odakla) · Shift+${slotNumber} (Solo)`}
+              >
+                {slotNumber}
+              </span>
             )}
             <span
               className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold tracking-wide uppercase shrink-0 ${
@@ -250,7 +260,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
               </span>
             )}
             {stream.roleTag && (
-              <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-400 border border-ninja-700 truncate">
+              <span className="hidden xl:inline-block text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-400 border border-ninja-700 truncate">
                 {stream.roleTag}
               </span>
             )}
@@ -259,12 +269,13 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
           {/* Right: Stream Controls */}
           <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
             {onMove && (canMovePrev || canMoveNext) && (
-              <div className="hidden sm:flex items-center bg-ninja-950 rounded-md border border-ninja-700/80">
+              <div className="hidden xl:flex items-center bg-ninja-950 rounded-md border border-ninja-700/80">
                 <button
                   type="button"
                   disabled={!canMovePrev}
                   onClick={() => onMove(stream.id, 'prev')}
                   title="Önceki sıraya taşı"
+                  aria-label="Önceki sıraya taşı"
                   className="p-1 text-slate-300 hover:text-white disabled:opacity-30 transition-colors"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
@@ -274,6 +285,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
                   disabled={!canMoveNext}
                   onClick={() => onMove(stream.id, 'next')}
                   title="Sonraki sıraya taşı"
+                  aria-label="Sonraki sıraya taşı"
                   className="p-1 text-slate-300 hover:text-white disabled:opacity-30 transition-colors"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -355,6 +367,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
               type="button"
               onClick={handleReload}
               title="Yayını yenile"
+              aria-label="Yayını yenile"
               className="p-1 rounded-md bg-ninja-950 hover:bg-ninja-800 text-slate-300 hover:text-white border border-ninja-700/80 transition-colors"
             >
               <RotateCw className="w-3.5 h-3.5" />
@@ -364,6 +377,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
               type="button"
               onClick={handleFullscreen}
               title="Tam ekran"
+              aria-label="Tam ekran"
               className="p-1 rounded-md bg-ninja-950 hover:bg-ninja-800 text-slate-300 hover:text-white border border-ninja-700/80 transition-colors"
             >
               <Maximize2 className="w-3.5 h-3.5" />
@@ -373,6 +387,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
               type="button"
               onClick={() => onRemove(stream.id)}
               title="Yayını kaldır"
+              aria-label="Yayını kaldır"
               className="p-1 rounded-md bg-ninja-950 hover:bg-rose-600 text-slate-300 hover:text-white border border-ninja-700/80 transition-colors"
             >
               <X className="w-3.5 h-3.5" />
@@ -401,6 +416,14 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
               allowFullScreen
               loading="eager"
             />
+          )}
+
+          {isDropTarget && (
+            <div className="absolute inset-0 bg-sky-500/15 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+              <span className="px-3 py-1.5 rounded-full bg-ninja-950/90 border border-sky-400/70 text-sky-300 text-xs font-bold shadow-lg">
+                Yer değiştirmek için bırakın
+              </span>
+            </div>
           )}
         </div>
       </div>

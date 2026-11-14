@@ -117,6 +117,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             title="Sohbeti ayrı pencerede aç"
+            aria-label="Sohbeti ayrı pencerede aç"
             className="p-1.5 text-slate-400 hover:text-slate-100 rounded-lg hover:bg-ninja-800 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -124,7 +125,8 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
           <button
             type="button"
             onClick={onClose}
-            title="Sohbeti gizle"
+            title="Sohbeti gizle (C)"
+            aria-label="Sohbeti gizle"
             className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-ninja-800 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -161,10 +163,10 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                   setSelectedStreamId(stream.id);
                   e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
                 }}
-                className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap border transition-colors ${
                   isSelected
-                    ? 'bg-ninja-800 text-slate-100 border border-ninja-700'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-ninja-900'
+                    ? 'bg-ninja-800 text-white border-orange-500/60'
+                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-ninja-900'
                 }`}
               >
                 <span

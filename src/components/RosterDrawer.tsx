@@ -162,6 +162,7 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
             onClick={onRefreshStatuses}
             disabled={isStatusLoading}
             title="Canlı yayın durumlarını yenile"
+            aria-label="Canlı yayın durumlarını yenile"
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-ninja-800 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isStatusLoading ? 'animate-spin' : ''}`} />
@@ -171,6 +172,7 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
               type="button"
               onClick={onClearAll}
               title="Ekrandaki tüm yayınları temizle"
+              aria-label="Ekrandaki tüm yayınları temizle"
               className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -180,6 +182,7 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
             type="button"
             onClick={onClose}
             title="Kadroyu kapat (Esc)"
+            aria-label="Kadroyu kapat"
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-ninja-800 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -403,6 +406,7 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
             const status = statuses[stream.id];
             const isLive = Boolean(status?.isLive);
             const isKonoha = stream.village === 'konoha';
+            const isCustom = stream.village === 'diger';
             const isMuted = activeId ? mutedStreams.has(activeId) : true;
             const isSolo = activeId ? soloStreamId === activeId : false;
             const isFocused = activeId ? focusedStreamId === activeId : false;
@@ -447,6 +451,8 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
                       className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
                         isKonoha
                           ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                          : isCustom
+                          ? 'bg-sky-500/10 border-sky-500/30 text-sky-400'
                           : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
                       }`}
                     >

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Tv, Play, Radio, Users } from 'lucide-react';
-import { ALL_CONFIG_STREAMS, StreamItem } from '../config/siteConfig';
+import { Tv, Play, Radio, Users, Plus } from 'lucide-react';
+import { ALL_CONFIG_STREAMS, Platform, StreamItem, siteConfig } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
-import { sortStreamsLiveFirst } from '../utils/streamUtils';
+import { parseChannelInput, sortStreamsLiveFirst } from '../utils/streamUtils';
 import { StreamPlayer } from './StreamPlayer';
 import { KonohaEmblem, SunaEmblem, VillageEmblem } from './VillageEmblems';
 
@@ -50,11 +50,29 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
 }) => {
   const [draggingStreamId, setDraggingStreamId] = useState<string | null>(null);
   const [dragOverStreamId, setDragOverStreamId] = useState<string | null>(null);
+  const [quickInput, setQuickInput] = useState('');
+  const [quickPlatform, setQuickPlatform] = useState<Platform>('kick');
 
   const onlineStreams = sortStreamsLiveFirst(
     ALL_CONFIG_STREAMS.filter(s => statuses[s.id]?.isLive),
     statuses
   );
+  const konohaLiveCount = siteConfig.villages.konoha.streams.filter(s => statuses[s.id]?.isLive).length;
+  const sunaLiveCount = siteConfig.villages.suna.streams.filter(s => statuses[s.id]?.isLive).length;
+
+  const handleQuickAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseChannelInput(quickInput, quickPlatform);
+    if (!parsed.channel) return;
+    onAddStream({
+      name: parsed.channel,
+      channel: parsed.channel,
+      platform: parsed.platform,
+      village: 'diger',
+      roleTag: 'Özel Kanal',
+    });
+    setQuickInput('');
+  };
 
   // Empty State: Live Showcase & Smart Presets
   if (streams.length === 0) {
@@ -102,9 +120,19 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
                   const isKonoha = stream.village === 'konoha';
 
                   return (
-                    <div
+                    <button
                       key={stream.id}
-                      className="group bg-ninja-900 border border-ninja-700/80 hover:border-orange-500/60 rounded-xl overflow-hidden flex flex-col transition-colors"
+                      type="button"
+                      onClick={() =>
+                        onAddStream({
+                          name: stream.name,
+                          channel: stream.channel,
+                          platform: stream.platform,
+                          village: stream.village,
+                          roleTag: stream.roleTag,
+                        })
+                      }
+                      className="group text-left bg-ninja-900 border border-ninja-700/80 hover:border-orange-500/70 rounded-xl overflow-hidden flex flex-col transition-colors focus-visible:ring-2 focus-visible:ring-orange-500"
                     >
                       <div className="relative aspect-video w-full bg-ninja-950 overflow-hidden">
                         {status?.thumbnail ? (
@@ -121,6 +149,13 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
                             <Radio className="w-7 h-7 text-rose-500/60" />
                           </div>
                         )}
+
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 flex items-center justify-center transition-colors">
+                          <span className="opacity-0 group-hover:opacity-100 px-3 py-1.5 rounded-full bg-orange-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg transition-opacity">
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>Aç</span>
+                          </span>
+                        </div>
 
                         <div className="absolute top-2 left-2 flex items-center gap-1.5">
                           <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-rose-600 text-white text-[10px] font-extrabold tracking-wider uppercase">
@@ -148,7 +183,7 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
                         </div>
                       </div>
 
-                      <div className="p-3.5 flex-1 flex flex-col justify-between gap-3">
+                      <div className="p-3.5 flex-1 w-full flex flex-col justify-between gap-3">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1.5">
                             <span className={isKonoha ? 'text-emerald-400' : 'text-amber-400'}>
@@ -171,30 +206,18 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
                           )}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onAddStream({
-                              name: stream.name,
-                              channel: stream.channel,
-                              platform: stream.platform,
-                              village: stream.village,
-                              roleTag: stream.roleTag,
-                            })
-                          }
-                          className="w-full py-2 px-3 rounded-lg bg-ninja-800 hover:bg-orange-600 text-slate-100 hover:text-white border border-ninja-700 hover:border-orange-500 font-semibold text-xs flex items-center justify-center gap-2 transition-colors"
-                        >
+                        <div className="w-full py-2 px-3 rounded-lg bg-ninja-800 group-hover:bg-orange-600 text-slate-100 group-hover:text-white border border-ninja-700 group-hover:border-orange-500 font-semibold text-xs flex items-center justify-center gap-2 transition-colors">
                           <Play className="w-3.5 h-3.5 fill-current" />
                           <span>İzlemeye Başla</span>
-                        </button>
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </section>
           ) : (
-            <section className="py-12 px-4 rounded-2xl bg-ninja-900 border border-ninja-700/80 flex flex-col items-center text-center">
+            <section className="py-10 px-4 rounded-2xl bg-ninja-900 border border-ninja-700/80 flex flex-col items-center text-center">
               <div className="w-12 h-12 rounded-xl bg-ninja-800 border border-ninja-700 flex items-center justify-center mb-4">
                 <Tv className="w-6 h-6 text-orange-400" />
               </div>
@@ -204,41 +227,84 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
                   : 'Şu Anda Aktif Canlı Yayın Bulunmuyor'}
               </h1>
               <p className="text-xs sm:text-sm text-slate-400 max-w-md">
-                Kadrodan izlemek istediğiniz yayıncıları seçebilir veya kayıtlı köy listelerinden birini yükleyebilirsiniz.
+                Aşağıdan özel bir kanal linki ekleyebilir, köy listelerini yükleyebilir veya sol kadrodan yayıncı seçebilirsiniz.
               </p>
             </section>
           )}
 
-          {/* Quick Village & Roster Actions */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-ninja-700/70">
-            <div className="flex flex-wrap items-center gap-2">
+          {/* Quick Custom Channel Bar + Village Actions */}
+          <div className="space-y-4 pt-4 border-t border-ninja-700/70">
+            <form
+              onSubmit={handleQuickAdd}
+              className="flex flex-wrap sm:flex-nowrap items-center gap-2 p-2.5 rounded-xl bg-ninja-900 border border-ninja-700/80"
+            >
               <button
                 type="button"
-                onClick={() => onLoadVillage('konoha', onlineStreams.length > 0 ? 'live' : 'all')}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold text-xs transition-colors"
+                onClick={() => setQuickPlatform(prev => (prev === 'kick' ? 'twitch' : 'kick'))}
+                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold uppercase shrink-0 transition-colors ${
+                  quickPlatform === 'kick'
+                    ? 'bg-kick text-black'
+                    : 'bg-twitch text-white'
+                }`}
+                title="Varsayılan platformu değiştir (link yapıştırırsanız otomatik algılanır)"
               >
-                <KonohaEmblem className="w-3.5 h-3.5" />
-                <span>Konoha POVs</span>
+                {quickPlatform}
               </button>
+              <input
+                type="text"
+                value={quickInput}
+                onChange={e => setQuickInput(e.target.value)}
+                placeholder="Özel kanal ekle: kick.com/kanal, twitch.tv/kanal veya @kullanici"
+                className="flex-1 min-w-[180px] px-3 py-1.5 rounded-lg bg-ninja-950 border border-ninja-700/80 focus:border-orange-500 text-xs text-slate-100 placeholder-slate-500 outline-none transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={!quickInput.trim()}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-bold shrink-0 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Kanalı Aç</span>
+              </button>
+            </form>
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onLoadVillage('konoha', konohaLiveCount > 0 ? 'live' : 'all')}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold text-xs transition-colors"
+                >
+                  <KonohaEmblem className="w-3.5 h-3.5" />
+                  <span>
+                    {konohaLiveCount > 0
+                      ? `Konoha Canlı (${konohaLiveCount})`
+                      : `Konoha Tümü (${siteConfig.villages.konoha.streams.length})`}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onLoadVillage('suna', sunaLiveCount > 0 ? 'live' : 'all')}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-semibold text-xs transition-colors"
+                >
+                  <SunaEmblem className="w-3.5 h-3.5" />
+                  <span>
+                    {sunaLiveCount > 0
+                      ? `Suna Canlı (${sunaLiveCount})`
+                      : `Suna Tümü (${siteConfig.villages.suna.streams.length})`}
+                  </span>
+                </button>
+              </div>
 
               <button
                 type="button"
-                onClick={() => onLoadVillage('suna', onlineStreams.length > 0 ? 'live' : 'all')}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-semibold text-xs transition-colors"
+                onClick={onOpenRoster}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-ninja-800 hover:bg-ninja-700 border border-ninja-700 text-slate-200 font-semibold text-xs transition-colors"
               >
-                <SunaEmblem className="w-3.5 h-3.5" />
-                <span>Suna POVs</span>
+                <Users className="w-3.5 h-3.5 text-orange-400" />
+                <span>Tüm Yayıncı Kadrosunu Aç</span>
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={onOpenRoster}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-ninja-800 hover:bg-ninja-700 border border-ninja-700 text-slate-200 font-semibold text-xs transition-colors"
-            >
-              <Users className="w-3.5 h-3.5 text-orange-400" />
-              <span>Tüm Yayıncı Kadrosunu Aç</span>
-            </button>
           </div>
         </div>
       </div>
@@ -332,6 +398,7 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
           <div key={stream.id} className={itemClass}>
             <StreamPlayer
               stream={stream}
+              slotNumber={count > 1 && index < 9 ? index + 1 : undefined}
               liveStatus={statuses[stream.id] ?? statuses[stream.channel.toLowerCase()]}
               isMuted={mutedStreams.has(stream.id)}
               isSolo={soloStreamId === stream.id}
