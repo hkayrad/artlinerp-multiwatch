@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ALL_CONFIG_STREAMS, StreamItem, siteConfig } from '../config/siteConfig';
 import { LayoutMode } from '../components/StreamGrid';
 import {
@@ -18,6 +18,35 @@ interface MultiwatchHistoryState {
   focusedStreamId: string | null;
 }
 
+interface SavedUiPrefs {
+  layoutMode?: LayoutMode;
+  isRosterOpen?: boolean;
+  isChatOpen?: boolean;
+}
+
+const UI_PREFS_STORAGE_KEY = 'artline_multiwatch_prefs';
+
+function loadUiPrefs(): SavedUiPrefs {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(UI_PREFS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as SavedUiPrefs;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveUiPrefs(prefs: SavedUiPrefs): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify(prefs));
+  } catch {
+    // ignore storage errors (e.g. private mode / quota)
+  }
+}
+
 function getDefaultStreams(): StreamItem[] {
   const defaultVillage = siteConfig.defaultVillage;
   if (defaultVillage === 'konoha') {
@@ -30,8 +59,6 @@ function getDefaultStreams(): StreamItem[] {
 }
 
 export function useMultiwatch() {
-  const { statuses, isLoading: isStatusLoading, refresh: refreshStatuses } = useLiveStatus();
-
   const [streams, setStreams] = useState<StreamItem[]>(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
@@ -45,6 +72,12 @@ export function useMultiwatch() {
     return getDefaultStreams();
   });
 
+  const customStreams = useMemo(
+    () => streams.filter(s => s.village === 'diger'),
+    [streams]
+  );
+  const { statuses, isLoading: isStatusLoading, refresh: refreshStatuses } = useLiveStatus(customStreams);
+
   const [activeVillage, setActiveVillage] = useState<'konoha' | 'suna' | 'all' | 'custom'>(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
@@ -53,12 +86,47 @@ export function useMultiwatch() {
     return siteConfig.defaultVillage;
   });
 
-  const [layoutMode, setLayoutModeState] = useState<LayoutMode>(siteConfig.defaultLayout);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isRosterOpen, setIsRosterOpen] = useState<boolean>(() =>
-    typeof window === 'undefined' ? true : window.innerWidth >= 768
-  );
+  const [layoutMode, setLayoutModeState] = useState<LayoutMode>(() => {
+    const saved = loadUiPrefs().layoutMode;
+    const valid = saved === 'auto' || saved === '2x2' || saved === 'theatre' ? saved : siteConfig.defaultLayout;
+    return valid === '2x2' && streams.length > 4 ? 'auto' : valid;
+  });
+  const [isChatOpen, setIsChatOpenState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return false;
+    return Boolean(loadUiPrefs().isChatOpen);
+  });
+  const [isRosterOpen, setIsRosterOpenState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    if (window.innerWidth < 768) return false;
+    const saved = loadUiPrefs().isRosterOpen;
+    return typeof saved === 'boolean' ? saved : true;
+  });
   const [focusedStreamId, setFocusedStreamId] = useState<string | null>(null);
+
+  useEffect(() => {
+    saveUiPrefs({ layoutMode, isRosterOpen, isChatOpen });
+  }, [layoutMode, isRosterOpen, isChatOpen]);
+
+  // Prevent mobile full-screen drawers from stacking over each other
+  const setIsRosterOpen = useCallback((value: React.SetStateAction<boolean>) => {
+    setIsRosterOpenState(prev => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      if (next && typeof window !== 'undefined' && window.innerWidth < 768) {
+        setIsChatOpenState(false);
+      }
+      return next;
+    });
+  }, []);
+
+  const setIsChatOpen = useCallback((value: React.SetStateAction<boolean>) => {
+    setIsChatOpenState(prev => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      if (next && typeof window !== 'undefined' && window.innerWidth < 768) {
+        setIsRosterOpenState(false);
+      }
+      return next;
+    });
+  }, []);
 
   const setLayoutMode = useCallback((mode: LayoutMode) => {
     if (mode === '2x2' && streams.length > 4) {
@@ -257,10 +325,12 @@ export function useMultiwatch() {
     );
   }, [statuses, isStatusLoading, showToast]);
 
-  // Add single stream
+  // Add single stream (deterministic ID matching config/URL hydration, functional mute update)
   const addStream = useCallback((item: Omit<StreamItem, 'id'>) => {
-    const exists = streams.some(
-      s => s.channel.toLowerCase() === item.channel.toLowerCase() && s.platform === item.platform
+    const channelLower = item.channel.toLowerCase();
+    const current = streamsRef.current;
+    const exists = current.some(
+      s => s.channel.toLowerCase() === channelLower && s.platform === item.platform
     );
 
     if (exists) {
@@ -268,19 +338,24 @@ export function useMultiwatch() {
       return;
     }
 
-    const newId = `${item.platform}-${item.channel}-${Date.now()}`;
+    const matchedConfig = ALL_CONFIG_STREAMS.find(
+      s => s.channel.toLowerCase() === channelLower && s.platform === item.platform
+    );
+    const newId = matchedConfig?.id ?? `${item.platform}-${channelLower}`;
     const newStream: StreamItem = {
       ...item,
       id: newId,
     };
 
-    setStreams(prev => [...prev, newStream]);
-    if (streams.length + 1 > 4) {
+    const nextStreams = [...current, newStream];
+    streamsRef.current = nextStreams;
+    setStreams(nextStreams);
+    if (nextStreams.length > 4) {
       setLayoutModeState(curr => (curr === '2x2' ? 'auto' : curr));
     }
 
-    // Mute newly added stream if there are already unmuted streams so audio doesn't clash
-    if (streams.length > 0) {
+    // Mute newly added stream if there are already streams open so audio doesn't clash
+    if (current.length > 0) {
       setMutedStreams(prev => {
         const next = new Set(prev);
         next.add(newId);
@@ -293,7 +368,7 @@ export function useMultiwatch() {
 
     setActiveVillage('custom');
     showToast(`"${item.name}" yayına eklendi`);
-  }, [streams, showToast]);
+  }, [showToast]);
 
   // Load multiple streams at once (e.g. "Watch All Live")
   const addMultipleStreams = useCallback((items: StreamItem[]) => {
