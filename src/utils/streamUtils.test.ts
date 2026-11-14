@@ -8,6 +8,7 @@ import {
   selectVillagePresetStreams,
   moveStreamByDirection,
   swapStreamsById,
+  getTheatreBand,
 } from './streamUtils';
 import { StreamItem } from '../config/siteConfig';
 import type { LiveStatusInfo } from '../services/streamStatus';
@@ -155,6 +156,21 @@ describe('streamUtils', () => {
       expect(ordered.map(s => s.id)).toEqual(['s1', 's2', 's3']);
       expect(swapStreamsById(ordered, 's2', 's2')).toBe(ordered);
       expect(swapStreamsById(ordered, 's1', 'missing')).toBe(ordered);
+    });
+  });
+
+  describe('getTheatreBand', () => {
+    it('maps stream counts to responsive theatre bands', () => {
+      expect(getTheatreBand(2)).toBe('2');
+      expect(getTheatreBand(3)).toBe('3');
+      expect(getTheatreBand(4)).toBe('4');
+      expect(getTheatreBand(5)).toBe('5');
+      expect(getTheatreBand(6)).toBe('6-7');
+      expect(getTheatreBand(7)).toBe('6-7');
+      expect(getTheatreBand(8)).toBe('8-9');
+      expect(getTheatreBand(9)).toBe('8-9');
+      expect(getTheatreBand(10)).toBe('10+');
+      expect(getTheatreBand(14)).toBe('10+');
     });
   });
 });

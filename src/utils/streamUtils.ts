@@ -180,3 +180,18 @@ export function swapStreamsById(
   [copy[sourceIdx], copy[targetIdx]] = [copy[targetIdx], copy[sourceIdx]];
   return copy;
 }
+
+export type TheatreBand = '2' | '3' | '4' | '5' | '6-7' | '8-9' | '10+';
+
+/**
+ * Maps multi-stream count to container-query Theatre mode band.
+ */
+export function getTheatreBand(count: number): TheatreBand {
+  if (count <= 2) return '2';
+  if (count === 3) return '3';
+  if (count === 4) return '4';
+  if (count === 5) return '5';
+  if (count <= 7) return '6-7';
+  if (count <= 9) return '8-9';
+  return '10+';
+}

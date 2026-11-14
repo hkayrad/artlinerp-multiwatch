@@ -3,7 +3,7 @@ import { Tv, Play, Radio, Users, Plus } from 'lucide-react';
 import { ALL_CONFIG_STREAMS, Platform, StreamItem, siteConfig } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
-import { parseChannelInput, sortStreamsLiveFirst } from '../utils/streamUtils';
+import { getTheatreBand, parseChannelInput, sortStreamsLiveFirst } from '../utils/streamUtils';
 import { StreamPlayer } from './StreamPlayer';
 import { KonohaEmblem, SunaEmblem, VillageEmblem } from './VillageEmblems';
 
@@ -318,24 +318,13 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
       ? focusedStreamId
       : streams[0]?.id;
 
-  let containerGridClass = '';
-  const isScrollableGrid =
-    (layoutMode === 'theatre' && count > 4) || (layoutMode === 'auto' && count > 6);
+  const theatreBand = getTheatreBand(count);
 
-  if (layoutMode === 'theatre') {
-    if (count === 1) {
-      containerGridClass = 'grid-cols-1 grid-rows-1';
-    } else if (count === 2) {
-      containerGridClass = 'grid-cols-1 lg:grid-cols-12 grid-rows-2 lg:grid-rows-1';
-    } else if (count === 3) {
-      containerGridClass = 'grid-cols-1 lg:grid-cols-12 grid-rows-3 lg:grid-rows-2';
-    } else if (count === 4) {
-      containerGridClass = 'grid-cols-1 lg:grid-cols-12 grid-rows-4 lg:grid-rows-3';
-    } else {
-      containerGridClass =
-        'grid-cols-1 lg:grid-cols-12 lg:grid-rows-[repeat(3,minmax(0,1fr))] lg:auto-rows-[minmax(160px,1fr)]';
-    }
-  } else if (layoutMode === '2x2') {
+  const isTheatreMulti = layoutMode === 'theatre' && count > 1;
+  let containerGridClass = '';
+  const isScrollableGrid = layoutMode === 'auto' && count > 6;
+
+  if (layoutMode === '2x2') {
     if (count === 1) {
       containerGridClass = 'grid-cols-1 grid-rows-1';
     } else if (count === 2) {
@@ -343,7 +332,7 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
     } else {
       containerGridClass = 'grid-cols-1 sm:grid-cols-2 grid-rows-4 sm:grid-rows-2';
     }
-  } else {
+  } else if (!isTheatreMulti) {
     if (count === 1) {
       containerGridClass = 'grid-cols-1 grid-rows-1';
     } else if (count === 2) {
@@ -361,8 +350,13 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
 
   return (
     <div
-      className={`flex-1 h-full w-full min-h-0 min-w-0 grid ${containerGridClass} gap-2 p-2 ${
-        isScrollableGrid ? 'overflow-y-auto overflow-x-hidden' : 'overflow-hidden'
+      data-theatre-band={isTheatreMulti ? theatreBand : undefined}
+      className={`flex-1 h-full w-full min-h-0 min-w-0 grid gap-2 p-2 ${
+        isTheatreMulti
+          ? 'theatre-grid'
+          : `${containerGridClass} ${
+              isScrollableGrid ? 'overflow-y-auto overflow-x-hidden' : 'overflow-hidden'
+            }`
       }`}
     >
       {streams.map((stream, index) => {
@@ -372,24 +366,8 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
 
         if (count === 1) {
           itemClass += ' col-span-1 row-span-1 max-w-6xl mx-auto order-none';
-        } else if (layoutMode === 'theatre') {
-          if (count === 2) {
-            itemClass += isMain
-              ? ' order-first col-span-1 lg:col-span-8 row-span-1'
-              : ' order-none col-span-1 lg:col-span-4 row-span-1';
-          } else if (count === 3) {
-            itemClass += isMain
-              ? ' order-first col-span-1 lg:col-span-8 row-span-1 lg:row-span-2'
-              : ' order-none col-span-1 lg:col-span-4 row-span-1';
-          } else if (count === 4) {
-            itemClass += isMain
-              ? ' order-first col-span-1 lg:col-span-9 row-span-1 lg:row-span-3'
-              : ' order-none col-span-1 lg:col-span-3 row-span-1';
-          } else {
-            itemClass += isMain
-              ? ' order-first col-span-1 lg:col-start-1 lg:col-span-9 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-0 min-h-[240px] lg:min-h-0'
-              : ' order-none col-span-1 lg:col-start-10 lg:col-span-3 min-h-[180px] lg:min-h-0';
-          }
+        } else if (isTheatreMulti) {
+          itemClass += isMain ? ' order-first theatre-main' : ' order-none theatre-sec';
         } else {
           itemClass += ' col-span-1 row-span-1 order-none';
         }
