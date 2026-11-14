@@ -6,6 +6,8 @@ import {
   hydrateStreamsFromQuery,
   sortStreamsLiveFirst,
   selectVillagePresetStreams,
+  moveStreamByDirection,
+  swapStreamsById,
 } from './streamUtils';
 import { StreamItem } from '../config/siteConfig';
 import type { LiveStatusInfo } from '../services/streamStatus';
@@ -129,6 +131,30 @@ describe('streamUtils', () => {
           village: 'diger',
         },
       ]);
+    });
+  });
+
+  describe('stream reordering helpers', () => {
+    const ordered: StreamItem[] = [
+      { id: 's1', name: 'A', channel: 'a', platform: 'kick', village: 'konoha' },
+      { id: 's2', name: 'B', channel: 'b', platform: 'twitch', village: 'suna' },
+      { id: 's3', name: 'C', channel: 'c', platform: 'kick', village: 'konoha' },
+    ];
+
+    it('moveStreamByDirection moves adjacent items and leaves bounds unchanged', () => {
+      expect(moveStreamByDirection(ordered, 's2', 'prev').map(s => s.id)).toEqual(['s2', 's1', 's3']);
+      expect(moveStreamByDirection(ordered, 's2', 'next').map(s => s.id)).toEqual(['s1', 's3', 's2']);
+      expect(moveStreamByDirection(ordered, 's1', 'prev')).toBe(ordered);
+      expect(moveStreamByDirection(ordered, 's3', 'next')).toBe(ordered);
+      expect(moveStreamByDirection(ordered, 'missing', 'next')).toBe(ordered);
+    });
+
+    it('swapStreamsById swaps non-adjacent streams and ignores invalid or identical IDs', () => {
+      const swapped = swapStreamsById(ordered, 's1', 's3');
+      expect(swapped.map(s => s.id)).toEqual(['s3', 's2', 's1']);
+      expect(ordered.map(s => s.id)).toEqual(['s1', 's2', 's3']);
+      expect(swapStreamsById(ordered, 's2', 's2')).toBe(ordered);
+      expect(swapStreamsById(ordered, 's1', 'missing')).toBe(ordered);
     });
   });
 });

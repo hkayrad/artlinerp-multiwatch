@@ -3,8 +3,10 @@ import { ALL_CONFIG_STREAMS, StreamItem, siteConfig } from '../config/siteConfig
 import { LayoutMode } from '../components/StreamGrid';
 import {
   hydrateStreamsFromQuery,
+  moveStreamByDirection,
   selectVillagePresetStreams,
   serializeStreamsToQuery,
+  swapStreamsById,
 } from '../utils/streamUtils';
 import { ToastMessage } from '../components/Toast';
 import { useLiveStatus } from './useLiveStatus';
@@ -429,15 +431,11 @@ export function useMultiwatch() {
 
   // Swap two stream positions without unmounting iframes (used for reordering)
   const moveStream = useCallback((id: string, direction: 'prev' | 'next') => {
-    setStreams(prev => {
-      const idx = prev.findIndex(s => s.id === id);
-      if (idx === -1) return prev;
-      const targetIdx = direction === 'prev' ? idx - 1 : idx + 1;
-      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
-      const copy = [...prev];
-      [copy[idx], copy[targetIdx]] = [copy[targetIdx], copy[idx]];
-      return copy;
-    });
+    setStreams(prev => moveStreamByDirection(prev, id, direction));
+  }, []);
+
+  const swapStreams = useCallback((sourceId: string, targetId: string) => {
+    setStreams(prev => swapStreamsById(prev, sourceId, targetId));
   }, []);
 
   // Toggle single stream mute
@@ -530,6 +528,7 @@ export function useMultiwatch() {
     setFocusedStreamId,
     focusStream,
     moveStream,
+    swapStreams,
     setToast,
     selectVillage,
     addStream,

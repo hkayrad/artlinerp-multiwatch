@@ -27,6 +27,7 @@ export const App: React.FC = () => {
     setIsRosterOpen,
     focusStream,
     moveStream,
+    swapStreams,
     setToast,
     selectVillage,
     addStream,
@@ -175,6 +176,7 @@ export const App: React.FC = () => {
             onRemoveStream={removeStream}
             onFocusStream={focusStream}
             onMoveStream={moveStream}
+            onSwapStreams={swapStreams}
             onOpenRoster={() => setIsRosterOpen(true)}
             onLoadVillage={selectVillage}
             onAddStream={addStream}

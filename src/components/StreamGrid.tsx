@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tv, Play, Radio, Users } from 'lucide-react';
 import { ALL_CONFIG_STREAMS, StreamItem } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
@@ -22,6 +22,7 @@ interface StreamGridProps {
   onRemoveStream: (id: string) => void;
   onFocusStream: (id: string, switchToTheatre?: boolean) => void;
   onMoveStream: (id: string, direction: 'prev' | 'next') => void;
+  onSwapStreams?: (sourceId: string, targetId: string) => void;
   onOpenRoster: () => void;
   onLoadVillage: (villageId: 'konoha' | 'suna' | 'all', mode?: VillagePresetMode) => void;
   onAddStream: (stream: Omit<StreamItem, 'id'>) => void;
@@ -41,11 +42,15 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
   onRemoveStream,
   onFocusStream,
   onMoveStream,
+  onSwapStreams,
   onOpenRoster,
   onLoadVillage,
   onAddStream,
   onAddMultipleStreams,
 }) => {
+  const [draggingStreamId, setDraggingStreamId] = useState<string | null>(null);
+  const [dragOverStreamId, setDragOverStreamId] = useState<string | null>(null);
+
   const onlineStreams = sortStreamsLiveFirst(
     ALL_CONFIG_STREAMS.filter(s => statuses[s.id]?.isLive),
     statuses
@@ -339,6 +344,35 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
               canMovePrev={layoutMode !== 'theatre' && index > 0}
               canMoveNext={layoutMode !== 'theatre' && index < count - 1}
               onMove={layoutMode !== 'theatre' ? onMoveStream : undefined}
+              canDrag={count > 1 && Boolean(onSwapStreams)}
+              isAnyDragging={draggingStreamId !== null}
+              isDraggingSelf={draggingStreamId === stream.id}
+              isDropTarget={
+                draggingStreamId !== null &&
+                draggingStreamId !== stream.id &&
+                dragOverStreamId === stream.id
+              }
+              onDragStartTile={(id) => {
+                setDraggingStreamId(id);
+                setDragOverStreamId(null);
+              }}
+              onDragEndTile={() => {
+                setDraggingStreamId(null);
+                setDragOverStreamId(null);
+              }}
+              onDragOverTile={(id) => {
+                if (draggingStreamId && draggingStreamId !== id) {
+                  setDragOverStreamId(id);
+                }
+              }}
+              onDropTile={(targetId, transferredSourceId) => {
+                const sourceId = transferredSourceId || draggingStreamId;
+                if (sourceId && sourceId !== targetId) {
+                  onSwapStreams?.(sourceId, targetId);
+                }
+                setDraggingStreamId(null);
+                setDragOverStreamId(null);
+              }}
             />
           </div>
         );

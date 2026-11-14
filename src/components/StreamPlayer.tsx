@@ -10,6 +10,7 @@ import {
   Minimize2,
   ChevronLeft,
   ChevronRight,
+  GripVertical,
   Users,
 } from 'lucide-react';
 import { StreamItem } from '../config/siteConfig';
@@ -30,6 +31,14 @@ interface StreamPlayerProps {
   canMovePrev?: boolean;
   canMoveNext?: boolean;
   onMove?: (id: string, direction: 'prev' | 'next') => void;
+  canDrag?: boolean;
+  isAnyDragging?: boolean;
+  isDraggingSelf?: boolean;
+  isDropTarget?: boolean;
+  onDragStartTile?: (id: string) => void;
+  onDragEndTile?: () => void;
+  onDragOverTile?: (id: string) => void;
+  onDropTile?: (targetId: string, sourceId?: string) => void;
 }
 
 function loadTwitchScript(): Promise<void> {
@@ -69,6 +78,14 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
   canMovePrev = false,
   canMoveNext = false,
   onMove,
+  canDrag = false,
+  isAnyDragging = false,
+  isDraggingSelf = false,
+  isDropTarget = false,
+  onDragStartTile,
+  onDragEndTile,
+  onDragOverTile,
+  onDropTile,
 }) => {
   const [reloadKey, setReloadKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -161,8 +178,24 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
       className="w-full h-full min-h-0 min-w-0 flex items-center justify-center"
     >
       <div
-        className={`flex flex-col w-full h-full min-h-0 bg-ninja-950 border rounded-xl overflow-hidden shadow-lg transition-colors duration-150 ${
-          isFocused
+        onDragOver={(e) => {
+          if (!isAnyDragging || isDraggingSelf) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          onDragOverTile?.(stream.id);
+        }}
+        onDrop={(e) => {
+          if (!isAnyDragging || isDraggingSelf) return;
+          e.preventDefault();
+          const sourceId = e.dataTransfer.getData('text/plain');
+          onDropTile?.(stream.id, sourceId);
+        }}
+        className={`flex flex-col w-full h-full min-h-0 bg-ninja-950 border rounded-xl overflow-hidden shadow-lg transition-all duration-150 ${
+          isDraggingSelf ? 'opacity-60 scale-[0.99]' : ''
+        } ${
+          isDropTarget
+            ? 'ring-2 ring-sky-400 border-sky-400/70'
+            : isFocused
             ? 'ring-2 ring-orange-500 border-orange-500/60'
             : isSolo
             ? 'ring-2 ring-emerald-500 border-emerald-500/60'
@@ -171,14 +204,29 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
       >
         {/* Always-visible Slim Control Bar (never swallowed by cross-origin iframes) */}
         <div
+          draggable={canDrag}
+          onDragStart={(e) => {
+            if (!canDrag) return;
+            e.dataTransfer.setData('text/plain', stream.id);
+            e.dataTransfer.effectAllowed = 'move';
+            onDragStartTile?.(stream.id);
+          }}
+          onDragEnd={() => onDragEndTile?.()}
           onClick={() => canFocus && onFocus?.(stream.id)}
           title={liveStatus?.title || stream.name || stream.channel}
           className={`h-8 px-2 bg-ninja-900 border-b border-ninja-700/80 flex items-center justify-between gap-2 shrink-0 select-none ${
-            canFocus ? 'cursor-pointer' : ''
+            canDrag
+              ? 'cursor-grab active:cursor-grabbing'
+              : canFocus
+              ? 'cursor-pointer'
+              : ''
           }`}
         >
-          {/* Left: Platform + Streamer + Live/Viewers + Role */}
+          {/* Left: Drag Handle + Platform + Streamer + Live/Viewers + Role */}
           <div className="flex items-center gap-1.5 min-w-0">
+            {canDrag && (
+              <GripVertical className="w-3 h-3 text-slate-500 shrink-0 hidden sm:inline" />
+            )}
             <span
               className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold tracking-wide uppercase shrink-0 ${
                 isKick ? 'bg-kick text-black' : 'bg-twitch text-white'
@@ -333,7 +381,11 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
         </div>
 
         {/* Full-bleed Video Embed (fits exact remaining cell height so bottom player controls are never clipped) */}
-        <div className="relative flex-1 w-full min-h-0 bg-ninja-950 overflow-hidden">
+        <div
+          className={`relative flex-1 w-full min-h-0 bg-ninja-950 overflow-hidden ${
+            isAnyDragging && !isDraggingSelf ? 'pointer-events-none' : ''
+          }`}
+        >
           {stream.platform === 'twitch' ? (
             <div
               ref={videoWrapperRef}

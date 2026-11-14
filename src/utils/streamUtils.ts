@@ -146,3 +146,37 @@ export function selectVillagePresetStreams(
   const live = streams.filter(s => statuses[s.id]?.isLive);
   return sortStreamsLiveFirst(live, statuses);
 }
+
+/**
+ * Moves a stream one slot backward or forward without mutating the original array.
+ */
+export function moveStreamByDirection(
+  streams: StreamItem[],
+  id: string,
+  direction: 'prev' | 'next'
+): StreamItem[] {
+  const idx = streams.findIndex(s => s.id === id);
+  if (idx === -1) return streams;
+  const targetIdx = direction === 'prev' ? idx - 1 : idx + 1;
+  if (targetIdx < 0 || targetIdx >= streams.length) return streams;
+  const copy = [...streams];
+  [copy[idx], copy[targetIdx]] = [copy[targetIdx], copy[idx]];
+  return copy;
+}
+
+/**
+ * Swaps two streams by ID without mutating the original array.
+ */
+export function swapStreamsById(
+  streams: StreamItem[],
+  sourceId: string,
+  targetId: string
+): StreamItem[] {
+  if (sourceId === targetId) return streams;
+  const sourceIdx = streams.findIndex(s => s.id === sourceId);
+  const targetIdx = streams.findIndex(s => s.id === targetId);
+  if (sourceIdx === -1 || targetIdx === -1) return streams;
+  const copy = [...streams];
+  [copy[sourceIdx], copy[targetIdx]] = [copy[targetIdx], copy[sourceIdx]];
+  return copy;
+}
