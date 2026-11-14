@@ -117,6 +117,15 @@ export const siteConfig: SiteConfig = {
           roleTag: 'Genin',
           isDefaultActive: false,
         },
+        {
+          id: 'arthasfyre',
+          name: 'Indra Uchiha',
+          channel: 'arthasfyre',
+          platform: 'kick',
+          village: 'konoha',
+          roleTag: 'Hokage',
+          isDefaultActive: false,
+        },
       ],
     },
     suna: {
