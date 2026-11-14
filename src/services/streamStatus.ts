@@ -9,23 +9,45 @@ export interface LiveStatusInfo {
   category?: string;
 }
 
-// Bellekte 30 saniyelik hafif önbellek
+export interface FetchStatusOptions {
+  force?: boolean;
+}
+
+// 30s in-memory cache
 const cache = new Map<string, { data: LiveStatusInfo; timestamp: number }>();
 const CACHE_DURATION_MS = 30 * 1000;
 
-/**
- * Tekil bir kanalın canlı yayın durumunu kontrol eder.
- */
-export async function fetchChannelStatus(stream: StreamItem): Promise<LiveStatusInfo> {
-  const cacheKey = `${stream.platform}:${stream.channel.toLowerCase()}`;
-  const now = Date.now();
-  const cached = cache.get(cacheKey);
+export function clearStreamStatusCache(): void {
+  cache.clear();
+}
 
-  if (cached && now - cached.timestamp < CACHE_DURATION_MS) {
-    return cached.data;
+function isDecapiUptimeLive(text: string): boolean {
+  const lower = text.trim().toLowerCase();
+  if (!lower) return false;
+  if (lower.includes('offline') || lower.includes('no user') || lower.includes('error')) {
+    return false;
+  }
+  return /\b(second|minute|hour|day)s?\b/.test(lower);
+}
+
+/**
+ * Fetches live status for a single Kick or Twitch channel.
+ */
+export async function fetchChannelStatus(
+  stream: StreamItem,
+  options: FetchStatusOptions = {}
+): Promise<LiveStatusInfo> {
+  const channelLower = stream.channel.toLowerCase();
+  const cacheKey = `${stream.platform}:${channelLower}`;
+  const now = Date.now();
+
+  if (!options.force) {
+    const cached = cache.get(cacheKey);
+    if (cached && now - cached.timestamp < CACHE_DURATION_MS) {
+      return cached.data;
+    }
   }
 
-  // Varsayılan çevrimdışı durumu
   const defaultOffline: LiveStatusInfo = {
     channel: stream.channel,
     isLive: false,
@@ -33,11 +55,12 @@ export async function fetchChannelStatus(stream: StreamItem): Promise<LiveStatus
 
   if (stream.platform === 'kick') {
     try {
-      const response = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(stream.channel.toLowerCase())}`, {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `https://kick.com/api/v2/channels/${encodeURIComponent(channelLower)}`,
+        {
+          headers: { Accept: 'application/json' },
+        }
+      );
 
       if (!response.ok) {
         return defaultOffline;
@@ -63,19 +86,57 @@ export async function fetchChannelStatus(stream: StreamItem): Promise<LiveStatus
     }
   }
 
-  // Twitch için varsayılan fallback
-  return defaultOffline;
+  // Twitch live check via DecAPI uptime endpoint with short timeout
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeoutId = controller
+    ? globalThis.setTimeout(() => controller.abort(), 4500)
+    : null;
+
+  try {
+    const response = await fetch(
+      `https://decapi.me/twitch/uptime/${encodeURIComponent(channelLower)}`,
+      controller ? { signal: controller.signal } : undefined
+    );
+
+    if (!response.ok) {
+      return defaultOffline;
+    }
+
+    const text = await response.text();
+    const isLive = isDecapiUptimeLive(text);
+
+    if (!isLive) {
+      cache.set(cacheKey, { data: defaultOffline, timestamp: now });
+      return defaultOffline;
+    }
+
+    const result: LiveStatusInfo = {
+      channel: stream.channel,
+      isLive: true,
+      thumbnail: `https://static-cdn.jtvnw.net/previews-ttv/live_user_${encodeURIComponent(channelLower)}-640x360.jpg`,
+    };
+
+    cache.set(cacheKey, { data: result, timestamp: now });
+    return result;
+  } catch {
+    return defaultOffline;
+  } finally {
+    if (timeoutId !== null) {
+      globalThis.clearTimeout(timeoutId);
+    }
+  }
 }
 
 /**
- * Birden fazla yayının canlı durumunu eşzamanlı sorgular.
+ * Fetches live statuses for multiple channels concurrently.
  */
 export async function fetchMultipleStreamStatuses(
-  streams: StreamItem[]
+  streams: StreamItem[],
+  options: FetchStatusOptions = {}
 ): Promise<Record<string, LiveStatusInfo>> {
   const results = await Promise.allSettled(
     streams.map(async stream => {
-      const status = await fetchChannelStatus(stream);
+      const status = await fetchChannelStatus(stream, options);
       return { id: stream.id, status };
     })
   );
