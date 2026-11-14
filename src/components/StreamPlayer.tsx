@@ -1,5 +1,16 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, RotateCw, X, Maximize2, Headphones, Expand } from 'lucide-react';
+import {
+  Volume2,
+  VolumeX,
+  RotateCw,
+  X,
+  Maximize2,
+  Headphones,
+  Expand,
+  Minimize2,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { StreamItem } from '../config/siteConfig';
 import { getParentDomain } from '../utils/streamUtils';
 
@@ -11,7 +22,11 @@ interface StreamPlayerProps {
   onSoloAudio: (id: string) => void;
   onRemove: (id: string) => void;
   isFocused?: boolean;
+  canFocus?: boolean;
   onFocus?: (id: string) => void;
+  canMovePrev?: boolean;
+  canMoveNext?: boolean;
+  onMove?: (id: string, direction: 'prev' | 'next') => void;
 }
 
 function loadTwitchScript(): Promise<void> {
@@ -45,10 +60,13 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
   onSoloAudio,
   onRemove,
   isFocused = false,
+  canFocus = false,
   onFocus,
+  canMovePrev = false,
+  canMoveNext = false,
+  onMove,
 }) => {
   const [reloadKey, setReloadKey] = useState(0);
-  const [isControlsVisible, setIsControlsVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoWrapperRef = useRef<HTMLDivElement>(null);
   const twitchPlayerRef = useRef<TwitchPlayerInstance | null>(null);
@@ -56,7 +74,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
   const parentDomain = getParentDomain();
   const isKick = stream.platform === 'kick';
 
-  // 1. Twitch: Resmi JavaScript SDK ile kesintisiz (refresh olmadan) ses kontrolü
+  // 1. Twitch: Official JS SDK for zero-refresh audio control
   useEffect(() => {
     if (stream.platform !== 'twitch' || !videoWrapperRef.current) return;
 
@@ -101,7 +119,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
     };
   }, [stream.platform, stream.channel, parentDomain, reloadKey]);
 
-  // Twitch ses durumunu yenileme olmadan canlı güncelle
+  // Live update Twitch mute state without reload
   useEffect(() => {
     if (stream.platform === 'twitch' && twitchPlayerRef.current) {
       try {
@@ -112,7 +130,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
     }
   }, [isMuted, stream.platform]);
 
-  // 2. Kick: Resmi harici JS API/postMessage bulunmadığından URL query parametresi ile ses güncelleme
+  // 2. Kick: Query param update for mute state
   const kickEmbedUrl = useMemo(() => {
     if (stream.platform !== 'kick') return '';
     return `https://player.kick.com/${encodeURIComponent(stream.channel)}?autoplay=true&muted=${isMuted ? 'true' : 'false'}`;
@@ -136,136 +154,169 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
   return (
     <div
       ref={containerRef}
-      onMouseEnter={() => setIsControlsVisible(true)}
-      onMouseLeave={() => setIsControlsVisible(false)}
-      className="w-full h-full max-w-full max-h-full flex items-center justify-center p-0.5"
+      className="w-full h-full min-h-0 min-w-0 flex items-center justify-center"
     >
       <div
-        className={`group relative flex flex-col bg-ninja-900 border rounded-xl overflow-hidden shadow-lg transition-all duration-200 w-full h-full max-w-full max-h-full ${
+        className={`flex flex-col w-full h-full min-h-0 bg-ninja-950 border rounded-xl overflow-hidden shadow-lg transition-colors duration-150 ${
           isFocused
-            ? 'ring-2 ring-orange-500 border-orange-500/50 shadow-orange-500/20'
+            ? 'ring-2 ring-orange-500 border-orange-500/60'
             : isSolo
-            ? 'ring-2 ring-emerald-500 border-emerald-500/50 shadow-emerald-500/20'
-            : 'border-ninja-700/60 hover:border-ninja-600'
+            ? 'ring-2 ring-emerald-500 border-emerald-500/60'
+            : 'border-ninja-700/80 hover:border-ninja-600'
         }`}
-        style={{ aspectRatio: '16 / 9' }}
       >
-        {/* Stream Bar / Header */}
+        {/* Always-visible Slim Control Bar (never swallowed by cross-origin iframes) */}
         <div
-          onClick={() => onFocus?.(stream.id)}
-          className={`flex items-center justify-between px-2.5 py-1.5 bg-ninja-900/95 backdrop-blur-md border-b border-ninja-700/60 z-10 shrink-0 transition-opacity duration-200 select-none cursor-pointer ${
-            isControlsVisible ? 'opacity-100' : 'opacity-90 sm:opacity-80'
+          onClick={() => canFocus && onFocus?.(stream.id)}
+          className={`h-8 px-2 bg-ninja-900 border-b border-ninja-700/80 flex items-center justify-between gap-2 shrink-0 select-none ${
+            canFocus ? 'cursor-pointer' : ''
           }`}
         >
-          {/* Sol Taraf: Platform Rozeti, İsim ve Rol */}
-          <div className="flex items-center gap-2 min-w-0">
+          {/* Left: Platform + Streamer + Role */}
+          <div className="flex items-center gap-1.5 min-w-0">
             <span
-              className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-wider uppercase flex items-center gap-1 ${
-                isKick
-                  ? 'bg-kick text-black font-extrabold shadow-sm shadow-kick/30'
-                  : 'bg-twitch text-white font-bold shadow-sm shadow-twitch/30'
+              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold tracking-wide uppercase shrink-0 ${
+                isKick ? 'bg-kick text-black' : 'bg-twitch text-white'
               }`}
             >
               {stream.platform}
             </span>
-
-            <div className="flex items-center gap-1.5 truncate">
-              <span className="font-semibold text-xs sm:text-sm text-slate-100 truncate">
-                {stream.name || stream.channel}
+            <span className="font-semibold text-xs text-slate-100 truncate">
+              {stream.name || stream.channel}
+            </span>
+            {stream.roleTag && (
+              <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-400 border border-ninja-700 truncate">
+                {stream.roleTag}
               </span>
-              {stream.roleTag && (
-                <span className="hidden sm:inline-block text-[11px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-400 border border-ninja-700/60 font-medium truncate">
-                  {stream.roleTag}
-                </span>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Sağ Taraf: Kontroller */}
+          {/* Right: Stream Controls */}
           <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-            {/* Tiyatro modunda ana ekrana al butonu (Odaklanmamışsa) */}
-            {!isFocused && onFocus && (
+            {onMove && (canMovePrev || canMoveNext) && (
+              <div className="hidden sm:flex items-center bg-ninja-950 rounded-md border border-ninja-700/80">
+                <button
+                  type="button"
+                  disabled={!canMovePrev}
+                  onClick={() => onMove(stream.id, 'prev')}
+                  title="Önceki sıraya taşı"
+                  className="p-1 text-slate-300 hover:text-white disabled:opacity-30 transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  disabled={!canMoveNext}
+                  onClick={() => onMove(stream.id, 'next')}
+                  title="Sonraki sıraya taşı"
+                  className="p-1 text-slate-300 hover:text-white disabled:opacity-30 transition-colors"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {canFocus && onFocus && (
               <button
+                type="button"
                 onClick={() => onFocus(stream.id)}
-                title="Tiyatroda Ana Ekrana Al (Yayın kesilmez)"
-                className="p-1.5 text-slate-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors"
+                title={
+                  isFocused
+                    ? 'Odaktan çık (Otomatik ızgaraya dön)'
+                    : 'Bu yayına odaklan (Tiyatro modu - yayın kesilmez)'
+                }
+                className={`px-1.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 border transition-colors ${
+                  isFocused
+                    ? 'bg-orange-600 text-white border-orange-500'
+                    : 'bg-ninja-950 text-slate-300 hover:text-orange-400 hover:bg-orange-500/10 border-ninja-700/80'
+                }`}
               >
-                <Expand className="w-3.5 h-3.5" />
+                {isFocused ? (
+                  <>
+                    <Minimize2 className="w-3.5 h-3.5" />
+                    <span className="hidden md:inline">Odakta</span>
+                  </>
+                ) : (
+                  <>
+                    <Expand className="w-3.5 h-3.5" />
+                    <span className="hidden md:inline">Odak</span>
+                  </>
+                )}
               </button>
             )}
 
-            {/* Tek Ses (Solo Audio) */}
             <button
+              type="button"
               onClick={() => onSoloAudio(stream.id)}
               title={
                 isSolo
-                  ? "Tek Ses Aktif (Diğerleri susturuldu)"
+                  ? 'Tek Ses Aktif (Diğerleri susturuldu)'
                   : isKick
-                  ? "Sesi Yalnızca Buraya Ver (Kick için yayın anlık yenilenebilir)"
-                  : "Sesi Yalnızca Buraya Ver (Diğerlerini sustur)"
+                  ? 'Sesi Yalnızca Buraya Ver (Kick için yayın anlık yenilenebilir)'
+                  : 'Sesi Yalnızca Buraya Ver (Diğerlerini sustur)'
               }
-              className={`p-1.5 rounded-lg text-xs flex items-center gap-1 transition-colors ${
+              className={`px-1.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 border transition-colors ${
                 isSolo
-                  ? 'bg-emerald-500 text-slate-950 font-bold'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-ninja-800'
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold'
+                  : 'bg-ninja-950 text-slate-300 hover:text-white hover:bg-ninja-800 border-ninja-700/80'
               }`}
             >
               <Headphones className="w-3.5 h-3.5" />
-              <span className="hidden md:inline text-[11px]">{isSolo ? 'Tek Ses' : 'Solo'}</span>
+              <span className="hidden md:inline">{isSolo ? 'Tek Ses' : 'Solo'}</span>
             </button>
 
-            {/* Ses Aç / Kapa */}
             <button
+              type="button"
               onClick={() => onToggleMute(stream.id)}
               title={
                 isMuted
                   ? isKick
-                    ? "Sesi Aç (Kick kısıtlaması nedeniyle yenilenebilir; kesintisiz ses için player içi ses çubuğunu da kullanabilirsiniz)"
-                    : "Sesi Aç"
+                    ? 'Sesi Aç (Kick kısıtlaması nedeniyle yenilenebilir; kesintisiz ses için player içi ses çubuğunu da kullanabilirsiniz)'
+                    : 'Sesi Aç'
                   : isKick
-                  ? "Sesi Kapat (Kick kısıtlaması nedeniyle yenilenebilir; kesintisiz ses için player içi ses çubuğunu da kullanabilirsiniz)"
-                  : "Sesi Kapat"
+                  ? 'Sesi Kapat (Kick kısıtlaması nedeniyle yenilenebilir; kesintisiz ses için player içi ses çubuğunu da kullanabilirsiniz)'
+                  : 'Sesi Kapat'
               }
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={`p-1 rounded-md border transition-colors ${
                 isMuted
-                  ? 'text-rose-400 hover:bg-rose-500/10'
-                  : 'text-slate-300 hover:text-white hover:bg-ninja-800'
+                  ? 'bg-rose-500/15 text-rose-300 border-rose-500/40 hover:bg-rose-500/25'
+                  : 'bg-ninja-950 text-emerald-400 border-ninja-700/80 hover:bg-ninja-800'
               }`}
             >
-              {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+              {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Yenile */}
             <button
+              type="button"
               onClick={handleReload}
-              title="Yayını Yenile (Donarsa tıkla)"
-              className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-ninja-800 rounded-lg transition-colors"
+              title="Yayını yenile"
+              className="p-1 rounded-md bg-ninja-950 hover:bg-ninja-800 text-slate-300 hover:text-white border border-ninja-700/80 transition-colors"
             >
               <RotateCw className="w-3.5 h-3.5" />
             </button>
 
-            {/* Tam Ekran */}
             <button
+              type="button"
               onClick={handleFullscreen}
-              title="Bu Yayını Tam Ekran Yap"
-              className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-ninja-800 rounded-lg transition-colors"
+              title="Tam ekran"
+              className="p-1 rounded-md bg-ninja-950 hover:bg-ninja-800 text-slate-300 hover:text-white border border-ninja-700/80 transition-colors"
             >
               <Maximize2 className="w-3.5 h-3.5" />
             </button>
 
-            {/* Kapat */}
             <button
+              type="button"
               onClick={() => onRemove(stream.id)}
-              title="Yayını Kaldır"
-              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+              title="Yayını kaldır"
+              className="p-1 rounded-md bg-ninja-950 hover:bg-rose-600 text-slate-300 hover:text-white border border-ninja-700/80 transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Video Container (16:9 ratio, fills remaining height) */}
-        <div className="relative flex-1 w-full h-full min-h-0 bg-ninja-950 overflow-hidden">
+        {/* Full-bleed Video Embed (fits exact remaining cell height so bottom player controls are never clipped) */}
+        <div className="relative flex-1 w-full min-h-0 bg-ninja-950 overflow-hidden">
           {stream.platform === 'twitch' ? (
             <div
               ref={videoWrapperRef}
@@ -287,4 +338,3 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
     </div>
   );
 });
-

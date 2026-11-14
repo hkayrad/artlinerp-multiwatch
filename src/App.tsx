@@ -1,19 +1,22 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { siteConfig } from './config/siteConfig';
 import { useMultiwatch } from './hooks/useMultiwatch';
 import { Header } from './components/Header';
+import { RosterDrawer } from './components/RosterDrawer';
 import { StreamGrid } from './components/StreamGrid';
 import { ChatDrawer } from './components/ChatDrawer';
-import { BottomBar } from './components/BottomBar';
-import { StreamSelectorModal } from './components/StreamSelectorModal';
 import { Toast } from './components/Toast';
 
 export const App: React.FC = () => {
   const {
     streams,
+    statuses,
+    isStatusLoading,
+    refreshStatuses,
     activeVillage,
     layoutMode,
     isChatOpen,
-    isAddModalOpen,
+    isRosterOpen,
     mutedStreams,
     soloStreamId,
     focusedStreamId,
@@ -21,8 +24,9 @@ export const App: React.FC = () => {
     isAllMuted,
     setLayoutMode,
     setIsChatOpen,
-    setIsAddModalOpen,
-    setFocusedStreamId,
+    setIsRosterOpen,
+    focusStream,
+    moveStream,
     setToast,
     selectVillage,
     addStream,
@@ -36,26 +40,64 @@ export const App: React.FC = () => {
     shareLink,
   } = useMultiwatch();
 
+  const allConfigStreams = useMemo(
+    () => [...siteConfig.villages.konoha.streams, ...siteConfig.villages.suna.streams],
+    []
+  );
+
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-ninja-950 text-slate-100">
-      {/* Üst Menü / Başlık */}
+    <div className="flex flex-col h-[100dvh] w-screen overflow-hidden bg-ninja-950 text-slate-100">
+      {/* Slim Top Command Bar */}
       <Header
         activeVillage={activeVillage}
-        streamCount={streams.length}
+        streams={streams}
+        allConfigStreams={allConfigStreams}
+        statuses={statuses}
+        isStatusLoading={isStatusLoading}
         layoutMode={layoutMode}
         isChatOpen={isChatOpen}
+        isRosterOpen={isRosterOpen}
+        isAllMuted={isAllMuted}
+        onRefreshStatuses={refreshStatuses}
         onSelectVillage={selectVillage}
+        onAddStream={addStream}
+        onRemoveStream={removeStream}
+        onAddMultipleStreams={addMultipleStreams}
         onChangeLayout={setLayoutMode}
+        onMuteAll={muteAll}
+        onUnmuteAll={unmuteAll}
+        onClearAll={clearAllStreams}
         onToggleChat={() => setIsChatOpen(prev => !prev)}
-        onOpenAddModal={() => setIsAddModalOpen(true)}
+        onToggleRoster={() => setIsRosterOpen(prev => !prev)}
         onShareLink={shareLink}
       />
 
-      {/* Ana Gövde: Yayın Izgarası + Yan Sohbet Paneli */}
+      {/* Main Workspace: Collapsible Roster + Video Canvas + Chat Rail */}
       <div className="flex-1 min-h-0 flex overflow-hidden relative">
-        <main className="flex-1 min-h-0 flex flex-col min-w-0 overflow-hidden bg-gradient-to-b from-ninja-950 to-ninja-900">
+        <RosterDrawer
+          isOpen={isRosterOpen}
+          onClose={() => setIsRosterOpen(false)}
+          activeStreams={streams}
+          statuses={statuses}
+          isStatusLoading={isStatusLoading}
+          mutedStreams={mutedStreams}
+          soloStreamId={soloStreamId}
+          focusedStreamId={focusedStreamId}
+          onRefreshStatuses={refreshStatuses}
+          onAddStream={addStream}
+          onRemoveStream={removeStream}
+          onSelectVillage={selectVillage}
+          onClearAll={clearAllStreams}
+          onToggleMute={toggleMute}
+          onSoloAudio={soloAudio}
+          onFocusStream={focusStream}
+        />
+
+        <main className="flex-1 min-h-0 flex flex-col min-w-0 overflow-hidden bg-ninja-950">
           <StreamGrid
             streams={streams}
+            statuses={statuses}
+            isStatusLoading={isStatusLoading}
             layoutMode={layoutMode}
             mutedStreams={mutedStreams}
             soloStreamId={soloStreamId}
@@ -63,15 +105,15 @@ export const App: React.FC = () => {
             onToggleMute={toggleMute}
             onSoloAudio={soloAudio}
             onRemoveStream={removeStream}
-            onFocusStream={setFocusedStreamId}
-            onOpenAddModal={() => setIsAddModalOpen(true)}
-            onLoadVillage={(villageId) => selectVillage(villageId)}
+            onFocusStream={focusStream}
+            onMoveStream={moveStream}
+            onOpenRoster={() => setIsRosterOpen(true)}
+            onLoadVillage={selectVillage}
             onAddStream={addStream}
             onAddMultipleStreams={addMultipleStreams}
           />
         </main>
 
-        {/* Sohbet Çekmecesi */}
         <ChatDrawer
           isOpen={isChatOpen}
           streams={streams}
@@ -79,30 +121,7 @@ export const App: React.FC = () => {
         />
       </div>
 
-      {/* Alt Kontrol Çubuğu */}
-      <BottomBar
-        streamCount={streams.length}
-        layoutMode={layoutMode}
-        isAllMuted={isAllMuted}
-        onChangeLayout={setLayoutMode}
-        onMuteAll={muteAll}
-        onUnmuteAll={unmuteAll}
-        onClearAll={clearAllStreams}
-        onShareLink={shareLink}
-      />
-
-      {/* Yayın Listesi ve Seçim Modalı */}
-      <StreamSelectorModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        activeStreams={streams}
-        onAddStream={addStream}
-        onRemoveStream={removeStream}
-        onSelectVillage={selectVillage}
-        onClearAll={clearAllStreams}
-      />
-
-      {/* Bildirim Toast'ı */}
+      {/* Notifications */}
       <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );

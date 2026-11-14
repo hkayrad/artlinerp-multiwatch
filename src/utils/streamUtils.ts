@@ -1,4 +1,5 @@
 import { Platform, StreamItem } from '../config/siteConfig';
+import type { LiveStatusInfo } from '../services/streamStatus';
 
 /**
  * URL veya kullanıcı adı girdisini platform ve kanal adına ayrıştırır.
@@ -75,4 +76,73 @@ export function getParentDomain(): string {
   const hostname = window.location.hostname;
   if (!hostname || hostname === '127.0.0.1') return 'localhost';
   return hostname;
+}
+
+/**
+ * Hydrates StreamItem objects from a serialized query string, matching known
+ * config streams and preserving existing stream IDs to avoid iframe reloads.
+ */
+export function hydrateStreamsFromQuery(
+  query: string,
+  configStreams: StreamItem[],
+  existingStreams: StreamItem[] = []
+): StreamItem[] {
+  const parsed = deserializeStreamsFromQuery(query);
+  if (parsed.length === 0) return [];
+
+  return parsed.map((item) => {
+    const channelLower = item.channel.toLowerCase();
+
+    const existing = existingStreams.find(
+      s => s.channel.toLowerCase() === channelLower && s.platform === item.platform
+    );
+    if (existing) return existing;
+
+    const matched = configStreams.find(
+      s => s.channel.toLowerCase() === channelLower && s.platform === item.platform
+    );
+    if (matched) return matched;
+
+    return {
+      id: `${item.platform}-${channelLower}`,
+      name: item.channel,
+      channel: item.channel,
+      platform: item.platform,
+      village: 'diger',
+    };
+  });
+}
+
+/**
+ * Sorts streams so live channels appear first (highest viewer count first),
+ * preserving original order for offline channels.
+ */
+export function sortStreamsLiveFirst(
+  streams: StreamItem[],
+  statuses: Record<string, LiveStatusInfo>
+): StreamItem[] {
+  return [...streams].sort((a, b) => {
+    const aLive = Boolean(statuses[a.id]?.isLive);
+    const bLive = Boolean(statuses[b.id]?.isLive);
+    if (aLive !== bLive) return aLive ? -1 : 1;
+    if (aLive && bLive) {
+      const aViewers = statuses[a.id]?.viewers ?? 0;
+      const bViewers = statuses[b.id]?.viewers ?? 0;
+      return bViewers - aViewers;
+    }
+    return 0;
+  });
+}
+
+/**
+ * Filters a village's stream list according to preset mode ('live' vs 'all').
+ */
+export function selectVillagePresetStreams(
+  streams: StreamItem[],
+  statuses: Record<string, LiveStatusInfo>,
+  mode: 'live' | 'all'
+): StreamItem[] {
+  if (mode === 'all') return streams;
+  const live = streams.filter(s => statuses[s.id]?.isLive);
+  return sortStreamsLiveFirst(live, statuses);
 }

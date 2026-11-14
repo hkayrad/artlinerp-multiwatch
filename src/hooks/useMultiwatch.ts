@@ -1,52 +1,53 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { StreamItem, siteConfig } from '../config/siteConfig';
 import { LayoutMode } from '../components/StreamGrid';
-import { deserializeStreamsFromQuery, serializeStreamsToQuery } from '../utils/streamUtils';
+import {
+  hydrateStreamsFromQuery,
+  selectVillagePresetStreams,
+  serializeStreamsToQuery,
+} from '../utils/streamUtils';
 import { ToastMessage } from '../components/Toast';
+import { useLiveStatus } from './useLiveStatus';
+
+export type VillagePresetMode = 'live' | 'all';
+
+interface MultiwatchHistoryState {
+  streamsQuery: string;
+  activeVillage: 'konoha' | 'suna' | 'all' | 'custom';
+  layoutMode: LayoutMode;
+  focusedStreamId: string | null;
+}
+
+const ALL_CONFIG_STREAMS: StreamItem[] = [
+  ...siteConfig.villages.konoha.streams,
+  ...siteConfig.villages.suna.streams,
+];
+
+function getDefaultStreams(): StreamItem[] {
+  const defaultVillage = siteConfig.defaultVillage;
+  if (defaultVillage === 'konoha') {
+    return siteConfig.villages.konoha.streams.filter(s => s.isDefaultActive);
+  }
+  if (defaultVillage === 'suna') {
+    return siteConfig.villages.suna.streams.filter(s => s.isDefaultActive);
+  }
+  return ALL_CONFIG_STREAMS.filter(s => s.isDefaultActive);
+}
 
 export function useMultiwatch() {
+  const { statuses, isLoading: isStatusLoading, refresh: refreshStatuses } = useLiveStatus();
+
   const [streams, setStreams] = useState<StreamItem[]>(() => {
-    // 1. URL'de streams parametresi var mı kontrol et
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const streamsQuery = searchParams.get('streams');
       if (streamsQuery) {
-        const parsed = deserializeStreamsFromQuery(streamsQuery);
-        if (parsed.length > 0) {
-          return parsed.map((item, index) => {
-            // Konfigürasyondan isim/etiket eşleşmesi varsa al
-            const matched = [
-              ...siteConfig.villages.konoha.streams,
-              ...siteConfig.villages.suna.streams,
-            ].find(
-              s => s.channel.toLowerCase() === item.channel.toLowerCase() && s.platform === item.platform
-            );
-
-            return {
-              id: `${item.platform}-${item.channel}-${index}`,
-              name: matched?.name || item.channel,
-              channel: item.channel,
-              platform: item.platform,
-              village: matched?.village || 'diger',
-              roleTag: matched?.roleTag,
-            };
-          });
-        }
+        const hydrated = hydrateStreamsFromQuery(streamsQuery, ALL_CONFIG_STREAMS);
+        if (hydrated.length > 0) return hydrated;
       }
     }
 
-    // 2. URL boşsa varsayılan köyün aktif yayınlarını yükle
-    const defaultVillage = siteConfig.defaultVillage;
-    if (defaultVillage === 'konoha') {
-      return siteConfig.villages.konoha.streams.filter(s => s.isDefaultActive);
-    } else if (defaultVillage === 'suna') {
-      return siteConfig.villages.suna.streams.filter(s => s.isDefaultActive);
-    } else {
-      return [
-        ...siteConfig.villages.konoha.streams.filter(s => s.isDefaultActive),
-        ...siteConfig.villages.suna.streams.filter(s => s.isDefaultActive),
-      ];
-    }
+    return getDefaultStreams();
   });
 
   const [activeVillage, setActiveVillage] = useState<'konoha' | 'suna' | 'all' | 'custom'>(() => {
@@ -57,61 +58,197 @@ export function useMultiwatch() {
     return siteConfig.defaultVillage;
   });
 
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(siteConfig.defaultLayout);
+  const [layoutMode, setLayoutModeState] = useState<LayoutMode>(siteConfig.defaultLayout);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isRosterOpen, setIsRosterOpen] = useState<boolean>(() =>
+    typeof window === 'undefined' ? true : window.innerWidth >= 768
+  );
   const [focusedStreamId, setFocusedStreamId] = useState<string | null>(null);
 
-  // Ses Durumu
+  const setLayoutMode = useCallback((mode: LayoutMode) => {
+    if (mode === '2x2' && streams.length > 4) {
+      return;
+    }
+    setLayoutModeState(mode);
+  }, [streams.length]);
+
+  useEffect(() => {
+    if (layoutMode === '2x2' && streams.length > 4) {
+      setLayoutModeState('auto');
+    }
+  }, [layoutMode, streams.length]);
+
+  // Audio state
   const [mutedStreams, setMutedStreams] = useState<Set<string>>(() => {
-    // İlk yayından sonrakileri varsayılan olarak sustur (ses kaosu olmaması için)
     const initialMuted = new Set<string>();
     streams.slice(1).forEach(s => initialMuted.add(s.id));
     return initialMuted;
   });
   const [soloStreamId, setSoloStreamId] = useState<string | null>(() => streams[0]?.id || null);
 
-  // Bildirim Toastı
+  // Toast state with clean timer ref
   const [toast, setToast] = useState<ToastMessage | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
     const id = Date.now().toString();
     setToast({ id, message, type });
-    setTimeout(() => {
+    toastTimerRef.current = window.setTimeout(() => {
       setToast(curr => (curr?.id === id ? null : curr));
+      toastTimerRef.current = null;
     }, 3500);
   }, []);
 
-  // URL'i yayın listesi değiştikçe senkronize et
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Browser history sync (pushState on navigation changes + popstate for Back/Forward)
+  const hasInitializedHistoryRef = useRef(false);
+  const isApplyingPopstateRef = useRef(false);
+  const streamsRef = useRef(streams);
+  streamsRef.current = streams;
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const queryString = serializeStreamsToQuery(streams);
-    const newUrl = queryString
+    const nextUrl = queryString
       ? `${window.location.pathname}?streams=${queryString}`
       : window.location.pathname;
 
-    window.history.replaceState(null, '', newUrl);
-  }, [streams]);
+    const snapshot: MultiwatchHistoryState = {
+      streamsQuery: queryString,
+      activeVillage,
+      layoutMode,
+      focusedStreamId,
+    };
 
-  // Köy Seçimi (Konoha, Suna veya Tümü)
-  const selectVillage = useCallback((village: 'konoha' | 'suna' | 'all') => {
-    setActiveVillage(village);
-    let newStreams: StreamItem[] = [];
-
-    if (village === 'konoha') {
-      newStreams = siteConfig.villages.konoha.streams;
-    } else if (village === 'suna') {
-      newStreams = siteConfig.villages.suna.streams;
-    } else {
-      newStreams = [
-        ...siteConfig.villages.konoha.streams,
-        ...siteConfig.villages.suna.streams,
-      ];
+    if (!hasInitializedHistoryRef.current) {
+      hasInitializedHistoryRef.current = true;
+      window.history.replaceState(snapshot, '', nextUrl);
+      return;
     }
 
+    if (isApplyingPopstateRef.current) {
+      isApplyingPopstateRef.current = false;
+      return;
+    }
+
+    const prevState = window.history.state as MultiwatchHistoryState | null;
+    if (
+      prevState &&
+      prevState.streamsQuery === snapshot.streamsQuery &&
+      prevState.activeVillage === snapshot.activeVillage &&
+      prevState.layoutMode === snapshot.layoutMode &&
+      prevState.focusedStreamId === snapshot.focusedStreamId
+    ) {
+      return;
+    }
+
+    window.history.pushState(snapshot, '', nextUrl);
+  }, [streams, activeVillage, layoutMode, focusedStreamId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handlePopState = (event: PopStateEvent) => {
+      isApplyingPopstateRef.current = true;
+
+      const searchParams = new URLSearchParams(window.location.search);
+      const streamsQuery = searchParams.get('streams') || '';
+      const state = event.state as MultiwatchHistoryState | null;
+
+      const restoredStreams = streamsQuery
+        ? hydrateStreamsFromQuery(streamsQuery, ALL_CONFIG_STREAMS, streamsRef.current)
+        : state && state.streamsQuery === ''
+        ? []
+        : getDefaultStreams();
+
+      const restoredLayout = state?.layoutMode ?? siteConfig.defaultLayout;
+      const safeLayout =
+        restoredLayout === '2x2' && restoredStreams.length > 4 ? 'auto' : restoredLayout;
+
+      setStreams(restoredStreams);
+      setActiveVillage(
+        state?.activeVillage ?? (streamsQuery ? 'custom' : siteConfig.defaultVillage)
+      );
+      setLayoutModeState(safeLayout);
+      setFocusedStreamId(state?.focusedStreamId ?? null);
+
+      setMutedStreams(prevMuted => {
+        const nextMuted = new Set<string>();
+        let hasUnmuted = false;
+        restoredStreams.forEach(s => {
+          const wasOpen = streamsRef.current.some(curr => curr.id === s.id);
+          if (wasOpen) {
+            if (prevMuted.has(s.id)) {
+              nextMuted.add(s.id);
+            } else {
+              hasUnmuted = true;
+            }
+          } else if (hasUnmuted) {
+            nextMuted.add(s.id);
+          } else {
+            hasUnmuted = true;
+          }
+        });
+        return nextMuted;
+      });
+      setSoloStreamId(prevSolo =>
+        prevSolo && restoredStreams.some(s => s.id === prevSolo) ? prevSolo : null
+      );
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Smart Village Preset selection ('live' loads only live streams; 'all' loads every registered stream)
+  const selectVillage = useCallback((
+    village: 'konoha' | 'suna' | 'all',
+    mode: VillagePresetMode = 'live'
+  ) => {
+    const pool: StreamItem[] =
+      village === 'konoha'
+        ? siteConfig.villages.konoha.streams
+        : village === 'suna'
+        ? siteConfig.villages.suna.streams
+        : [
+            ...siteConfig.villages.konoha.streams,
+            ...siteConfig.villages.suna.streams,
+          ];
+
+    const newStreams = selectVillagePresetStreams(pool, statuses, mode);
+    const villageLabel =
+      village === 'konoha'
+        ? 'Konohagakure'
+        : village === 'suna'
+        ? 'Sunagakure'
+        : 'Tüm köyler';
+
+    if (mode === 'live' && newStreams.length === 0) {
+      if (isStatusLoading) {
+        showToast('Canlı yayın durumları kontrol ediliyor, lütfen bekleyin.', 'info');
+      } else {
+        showToast(`${villageLabel} için şu anda canlı yayın yok. Menüden "Tüm Kayıtlılar"ı açabilirsiniz.`, 'info');
+      }
+      return;
+    }
+
+    setActiveVillage(village);
     setStreams(newStreams);
-    // İlk hariç diğerlerini sustur
+    if (newStreams.length > 4) {
+      setLayoutModeState(curr => (curr === '2x2' ? 'auto' : curr));
+    }
+
     const muted = new Set<string>();
     newStreams.slice(1).forEach(s => muted.add(s.id));
     setMutedStreams(muted);
@@ -119,52 +256,57 @@ export function useMultiwatch() {
     setFocusedStreamId(newStreams[0]?.id || null);
 
     showToast(
-      village === 'konoha'
-        ? '🍃 Konohagakure POV yayınları yüklendi'
-        : village === 'suna'
-        ? '⏳ Sunagakure POV yayınları yüklendi'
-        : '⚔️ Tüm köylerin POV yayınları yüklendi'
+      mode === 'live'
+        ? `${villageLabel}: ${newStreams.length} canlı POV yüklendi`
+        : `${villageLabel}: ${newStreams.length} kayıtlı POV yüklendi`
     );
-  }, [showToast]);
+  }, [statuses, isStatusLoading, showToast]);
 
-  // Yeni Yayın Ekle
+  // Add single stream
   const addStream = useCallback((item: Omit<StreamItem, 'id'>) => {
-    // Aynı kanalın zaten ekli olup olmadığını kontrol et
-    let isAlreadyAdded = false;
-    setStreams(prev => {
-      if (prev.some(s => s.channel.toLowerCase() === item.channel.toLowerCase() && s.platform === item.platform)) {
-        isAlreadyAdded = true;
-        return prev;
-      }
+    const exists = streams.some(
+      s => s.channel.toLowerCase() === item.channel.toLowerCase() && s.platform === item.platform
+    );
 
-      const newId = `${item.platform}-${item.channel}-${Date.now()}`;
-      const newStream: StreamItem = {
-        ...item,
-        id: newId,
-      };
-
-      // Yeni eklenen yayını sustur (mevcut sesi bölmesin)
-      setMutedStreams(mutedPrev => {
-        const next = new Set(mutedPrev);
-        next.add(newId);
-        return next;
-      });
-
-      return [...prev, newStream];
-    });
-
-    if (isAlreadyAdded) {
+    if (exists) {
       showToast(`"${item.name}" zaten ekranda açık`, 'info');
       return;
     }
 
+    const newId = `${item.platform}-${item.channel}-${Date.now()}`;
+    const newStream: StreamItem = {
+      ...item,
+      id: newId,
+    };
+
+    setStreams(prev => [...prev, newStream]);
+    if (streams.length + 1 > 4) {
+      setLayoutModeState(curr => (curr === '2x2' ? 'auto' : curr));
+    }
+
+    // Mute newly added stream if there are already unmuted streams so audio doesn't clash
+    if (streams.length > 0) {
+      setMutedStreams(prev => {
+        const next = new Set(prev);
+        next.add(newId);
+        return next;
+      });
+    } else {
+      setSoloStreamId(newId);
+      setFocusedStreamId(newId);
+    }
+
     setActiveVillage('custom');
     showToast(`"${item.name}" yayına eklendi`);
-  }, [showToast]);
+  }, [streams, showToast]);
 
-  // Çoklu Yayın Yükle (Canlı yayınları topluca açmak için)
+  // Load multiple streams at once (e.g. "Watch All Live")
   const addMultipleStreams = useCallback((items: StreamItem[]) => {
+    if (items.length === 0) return;
     setStreams(items);
+    if (items.length > 4) {
+      setLayoutModeState(curr => (curr === '2x2' ? 'auto' : curr));
+    }
     const muted = new Set<string>();
     items.slice(1).forEach(s => muted.add(s.id));
     setMutedStreams(muted);
@@ -174,7 +316,7 @@ export function useMultiwatch() {
     showToast(`${items.length} canlı yayın ekrana yüklendi`);
   }, [showToast]);
 
-  // Yayın Kaldır
+  // Remove stream
   const removeStream = useCallback((id: string) => {
     setStreams(prev => prev.filter(s => s.id !== id));
     setMutedStreams(prev => {
@@ -182,11 +324,11 @@ export function useMultiwatch() {
       next.delete(id);
       return next;
     });
-    if (soloStreamId === id) setSoloStreamId(null);
-    if (focusedStreamId === id) setFocusedStreamId(null);
-  }, [soloStreamId, focusedStreamId]);
+    setSoloStreamId(prev => (prev === id ? null : prev));
+    setFocusedStreamId(prev => (prev === id ? null : prev));
+  }, []);
 
-  // Tümünü Kaldır
+  // Clear all streams
   const clearAllStreams = useCallback(() => {
     setStreams([]);
     setMutedStreams(new Set());
@@ -196,7 +338,39 @@ export function useMultiwatch() {
     showToast('Tüm yayınlar temizlendi', 'info');
   }, [showToast]);
 
-  // Ses Değiştir (Tekil Mute)
+  // Focus or unfocus stream (toggles Theatre mode when clicking an already-focused stream)
+  const focusStream = useCallback((id: string, switchToTheatre = true) => {
+    const currentMainId =
+      focusedStreamId && streams.some(s => s.id === focusedStreamId)
+        ? focusedStreamId
+        : streams[0]?.id;
+
+    if (layoutMode === 'theatre' && currentMainId === id) {
+      setLayoutMode('auto');
+      setFocusedStreamId(null);
+      return;
+    }
+
+    setFocusedStreamId(id);
+    if (switchToTheatre) {
+      setLayoutMode('theatre');
+    }
+  }, [layoutMode, focusedStreamId, streams, setLayoutMode]);
+
+  // Swap two stream positions without unmounting iframes (used for reordering)
+  const moveStream = useCallback((id: string, direction: 'prev' | 'next') => {
+    setStreams(prev => {
+      const idx = prev.findIndex(s => s.id === id);
+      if (idx === -1) return prev;
+      const targetIdx = direction === 'prev' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      const copy = [...prev];
+      [copy[idx], copy[targetIdx]] = [copy[targetIdx], copy[idx]];
+      return copy;
+    });
+  }, []);
+
+  // Toggle single stream mute
   const toggleMute = useCallback((id: string) => {
     setMutedStreams(prev => {
       const next = new Set(prev);
@@ -210,10 +384,9 @@ export function useMultiwatch() {
     setSoloStreamId(null);
   }, []);
 
-  // Tek Ses Modu (Solo Audio)
+  // Solo audio
   const soloAudio = useCallback((id: string) => {
     if (soloStreamId === id) {
-      // Zaten solo ise solo moddan çık
       setSoloStreamId(null);
       return;
     }
@@ -230,7 +403,7 @@ export function useMultiwatch() {
     showToast(`Ses yalnızca "${target?.name || 'seçili yayın'}" kanalına verildi`);
   }, [soloStreamId, streams, showToast]);
 
-  // Tümünü Sustur
+  // Mute all
   const muteAll = useCallback(() => {
     const allIds = new Set(streams.map(s => s.id));
     setMutedStreams(allIds);
@@ -238,19 +411,19 @@ export function useMultiwatch() {
     showToast('Tüm yayınların sesi kapatıldı');
   }, [streams, showToast]);
 
-  // Tümünün Sesini Aç
+  // Unmute all
   const unmuteAll = useCallback(() => {
     setMutedStreams(new Set());
     setSoloStreamId(null);
     showToast('Tüm yayınların sesi açıldı');
   }, [showToast]);
 
-  // Paylaşım Bağlantısını Panoya Kopyala
+  // Share link
   const shareLink = useCallback(() => {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(
       () => {
-        showToast('✅ URL kopyalandı!');
+        showToast('URL kopyalandı!');
       },
       () => {
         showToast('URL kopyalanamadı, lütfen adres çubuğundan kopyalayın.', 'error');
@@ -268,10 +441,13 @@ export function useMultiwatch() {
 
   return {
     streams,
+    statuses,
+    isStatusLoading,
+    refreshStatuses,
     activeVillage,
     layoutMode,
     isChatOpen,
-    isAddModalOpen,
+    isRosterOpen,
     mutedStreams,
     soloStreamId,
     focusedStreamId,
@@ -280,8 +456,10 @@ export function useMultiwatch() {
     isAllMuted,
     setLayoutMode,
     setIsChatOpen,
-    setIsAddModalOpen,
+    setIsRosterOpen,
     setFocusedStreamId,
+    focusStream,
+    moveStream,
     setToast,
     selectVillage,
     addStream,
