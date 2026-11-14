@@ -15,10 +15,10 @@ import {
   Expand,
   MonitorPlay,
 } from 'lucide-react';
-import { ALL_CONFIG_STREAMS, StreamItem, siteConfig } from '../config/siteConfig';
+import { ALL_CONFIG_STREAMS, Platform, StreamItem, siteConfig } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
-import { sortStreamsLiveFirst } from '../utils/streamUtils';
+import { parseChannelInput, sortStreamsLiveFirst } from '../utils/streamUtils';
 import { KonohaEmblem, SunaEmblem, AllVillagesEmblem, VillageEmblem } from './VillageEmblems';
 
 interface RosterDrawerProps {
@@ -61,8 +61,12 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
   const [activeTab, setActiveTab] = useState<'all' | 'konoha' | 'suna'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'live' | 'active'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCustomFormOpen, setIsCustomFormOpen] = useState(false);
+  const [customInput, setCustomInput] = useState('');
+  const [customPlatform, setCustomPlatform] = useState<Platform>('kick');
   const [copiedDiscord, setCopiedDiscord] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const customInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -84,8 +88,32 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
     activeChannelsMap.set(`${s.platform}:${s.channel.toLowerCase()}`, s.id);
   });
 
+  const configChannelKeys = new Set(
+    ALL_CONFIG_STREAMS.map(s => `${s.platform}:${s.channel.toLowerCase()}`)
+  );
+  const customActiveStreams = activeStreams.filter(
+    s => !configChannelKeys.has(`${s.platform}:${s.channel.toLowerCase()}`)
+  );
+  const allRosterStreams = [...customActiveStreams, ...ALL_CONFIG_STREAMS];
+
+  const handleAddCustomStream = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseChannelInput(customInput, customPlatform);
+    if (!parsed.channel) return;
+
+    onAddStream({
+      name: parsed.channel,
+      channel: parsed.channel,
+      platform: parsed.platform,
+      village: 'diger',
+      roleTag: 'Özel Kanal',
+    });
+    setCustomInput('');
+    setIsCustomFormOpen(false);
+  };
+
   const filteredStreams = sortStreamsLiveFirst(
-    ALL_CONFIG_STREAMS.filter(stream => {
+    allRosterStreams.filter(stream => {
       if (activeTab === 'konoha' && stream.village !== 'konoha') return false;
       if (activeTab === 'suna' && stream.village !== 'suna') return false;
 
@@ -109,7 +137,7 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
     statuses
   );
 
-  const liveTotalCount = ALL_CONFIG_STREAMS.filter(s => statuses[s.id]?.isLive).length;
+  const liveTotalCount = allRosterStreams.filter(s => statuses[s.id]?.isLive).length;
   const konohaCount = siteConfig.villages.konoha.streams.length;
   const sunaCount = siteConfig.villages.suna.streams.length;
 
@@ -161,28 +189,87 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
 
       {/* Filters & Search */}
       <div className="px-3 py-2.5 border-b border-ninja-700/80 bg-ninja-950/40 space-y-2 shrink-0">
-        {/* Search */}
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="İsim, @kanal, rol veya başlık ara..."
-            className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-ninja-950 border border-ninja-700/80 focus:border-orange-500 text-xs text-slate-100 placeholder-slate-500 outline-none transition-colors"
-          />
-          {searchQuery && (
+        {/* Search + Custom Channel Toggle */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative flex-1 min-w-0">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="İsim, @kanal, rol veya başlık ara..."
+              className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-ninja-950 border border-ninja-700/80 focus:border-orange-500 text-xs text-slate-100 placeholder-slate-500 outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                title="Aramayı temizle"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !isCustomFormOpen;
+              setIsCustomFormOpen(next);
+              if (next) {
+                setTimeout(() => customInputRef.current?.focus(), 0);
+              }
+            }}
+            aria-expanded={isCustomFormOpen}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border shrink-0 transition-colors ${
+              isCustomFormOpen
+                ? 'bg-orange-600 text-white border-orange-500'
+                : 'bg-ninja-950 hover:bg-ninja-800 text-slate-200 border-ninja-700/80'
+            }`}
+            title="Kadrodan bağımsız özel Kick veya Twitch kanalı ekle"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Özel</span>
+          </button>
+        </div>
+
+        {isCustomFormOpen && (
+          <form
+            onSubmit={handleAddCustomStream}
+            className="flex items-center gap-1.5 p-1.5 rounded-lg bg-ninja-950/90 border border-orange-500/40"
+          >
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-              title="Aramayı temizle"
+              onClick={() =>
+                setCustomPlatform(prev => (prev === 'kick' ? 'twitch' : 'kick'))
+              }
+              className={`px-2 py-1 rounded text-[10px] font-extrabold uppercase shrink-0 transition-colors ${
+                customPlatform === 'kick'
+                  ? 'bg-kick text-black'
+                  : 'bg-twitch text-white'
+              }`}
+              title="Varsayılan platformu değiştir (URL yazarsanız otomatik algılanır)"
             >
-              <X className="w-3.5 h-3.5" />
+              {customPlatform}
             </button>
-          )}
-        </div>
+            <input
+              ref={customInputRef}
+              type="text"
+              value={customInput}
+              onChange={e => setCustomInput(e.target.value)}
+              placeholder="kick.com/kanal veya @kullanici"
+              className="flex-1 min-w-0 px-2 py-1 rounded bg-ninja-900 border border-ninja-700/80 focus:border-orange-500 text-xs text-slate-100 placeholder-slate-500 outline-none"
+            />
+            <button
+              type="submit"
+              disabled={!customInput.trim()}
+              className="px-2.5 py-1 rounded text-[11px] font-bold bg-orange-600 hover:bg-orange-500 disabled:opacity-40 disabled:pointer-events-none text-white shrink-0 transition-colors"
+            >
+              Ekle
+            </button>
+          </form>
+        )}
 
         {/* Village Tabs */}
         <div className="grid grid-cols-3 gap-1 bg-ninja-950 p-1 rounded-lg border border-ninja-700/80">
@@ -197,7 +284,7 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
           >
             <AllVillagesEmblem className="w-3 h-3 shrink-0" />
             <span className="truncate">Tümü</span>
-            <span className="text-[10px] opacity-80">{ALL_CONFIG_STREAMS.length}</span>
+            <span className="text-[10px] opacity-80">{allRosterStreams.length}</span>
           </button>
 
           <button
