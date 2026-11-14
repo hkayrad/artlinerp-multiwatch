@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Tv, Play, Radio, Users, Plus } from 'lucide-react';
+import { Play, Radio, Users, Plus } from 'lucide-react';
 import { ALL_CONFIG_STREAMS, Platform, StreamItem, siteConfig } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
@@ -246,8 +246,26 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
             </section>
           ) : (
             <section className="py-10 px-4 rounded-2xl bg-ninja-900 border border-ninja-700/80 flex flex-col items-center text-center">
-              <div className="w-12 h-12 rounded-xl bg-ninja-800 border border-ninja-700 flex items-center justify-center mb-4">
-                <Tv className="w-6 h-6 text-orange-400" />
+              <div className="flex items-center gap-2.5 mb-4">
+                <img
+                  src={siteConfig.serverLogo}
+                  alt={siteConfig.serverName}
+                  className="w-11 h-11 rounded-xl bg-ninja-950 border border-orange-500/40 p-1 object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+                <span className="text-sm font-bold text-slate-500" aria-hidden="true">
+                  ×
+                </span>
+                <img
+                  src={siteConfig.creatorLogo}
+                  alt={siteConfig.creatorName}
+                  className="w-11 h-11 rounded-xl bg-ninja-950 border border-orange-500/40 p-1 object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
               </div>
               <h1 className="text-lg sm:text-xl font-bold text-slate-100 naruto-title mb-1.5">
                 {isStatusLoading

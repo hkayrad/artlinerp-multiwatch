@@ -121,21 +121,41 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => {
               if (streamCount > 0) onClearAll();
             }}
-            title={streamCount > 0 ? 'Ana ekrana dön' : siteConfig.serverName}
-            className={`flex items-center gap-2 shrink-0 rounded-lg transition-opacity ${
+            title={
+              streamCount > 0
+                ? `${siteConfig.serverName} × ${siteConfig.creatorName} — Ana ekrana dön`
+                : `${siteConfig.serverName} × ${siteConfig.creatorName}`
+            }
+            className={`flex items-center gap-1.5 sm:gap-2 shrink-0 rounded-lg transition-opacity ${
               streamCount > 0 ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'
             }`}
           >
-            <img
-              src={siteConfig.serverLogo}
-              alt={siteConfig.serverName}
-              className="w-7 h-7 object-contain rounded-lg bg-ninja-950 border border-orange-500/40 p-0.5"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+            <div className="flex items-center gap-1 shrink-0">
+              <img
+                src={siteConfig.serverLogo}
+                alt={siteConfig.serverName}
+                className="w-7 h-7 object-contain rounded-lg bg-ninja-950 border border-orange-500/40 p-0.5"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+              <span className="text-[10px] font-bold text-slate-500" aria-hidden="true">
+                ×
+              </span>
+              <img
+                src={siteConfig.creatorLogo}
+                alt={siteConfig.creatorName}
+                className="w-7 h-7 object-contain rounded-lg bg-ninja-950 border border-orange-500/40 p-0.5"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+            </div>
             <span className="hidden sm:inline font-bold text-sm text-slate-100 naruto-title tracking-wide">
               Artline
+              <span className="hidden xl:inline text-orange-400">
+                {' '}× {siteConfig.creatorName}
+              </span>
             </span>
           </button>
 
@@ -574,18 +594,23 @@ export const Header: React.FC<HeaderProps> = ({
                     {siteConfig.requestStreamerNotice}
                   </p>
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                       <img
                         src={siteConfig.creatorLogo}
                         alt={siteConfig.creatorName}
-                        className="w-4 h-4 rounded object-contain shrink-0"
+                        className="w-7 h-7 rounded-lg bg-ninja-900 border border-orange-500/30 p-0.5 object-contain shrink-0"
                         onError={(e) => {
                           (e.target as HTMLElement).style.display = 'none';
                         }}
                       />
-                      <span className="text-[11px] font-mono text-orange-400 truncate">
-                        {siteConfig.creatorDiscord}
-                      </span>
+                      <div className="min-w-0">
+                        <div className="text-[11px] font-bold text-slate-100 truncate">
+                          {siteConfig.creatorName}
+                        </div>
+                        <div className="text-[11px] font-mono text-orange-400 truncate">
+                          {siteConfig.creatorDiscord}
+                        </div>
+                      </div>
                     </div>
                     <button
                       type="button"

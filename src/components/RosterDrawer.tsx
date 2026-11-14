@@ -596,13 +596,13 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
           <img
             src={siteConfig.creatorLogo}
             alt={siteConfig.creatorName}
-            className="w-4 h-4 rounded object-contain shrink-0"
+            className="w-6 h-6 rounded-md bg-ninja-900 border border-orange-500/30 p-0.5 object-contain shrink-0"
             onError={(e) => {
               (e.target as HTMLElement).style.display = 'none';
             }}
           />
-          <span className="text-[11px] text-slate-400 truncate">
-            Yayıncı önerisi:
+          <span className="text-[11px] font-bold text-slate-200 shrink-0">
+            {siteConfig.creatorName}
           </span>
           <span className="text-[11px] font-semibold text-orange-400 truncate">
             {siteConfig.creatorDiscord}
