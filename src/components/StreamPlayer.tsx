@@ -177,7 +177,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-0 min-w-0 flex items-center justify-center"
+      className="stream-tile w-full h-full min-h-0 min-w-0 flex items-center justify-center"
     >
       <div
         onDragOver={(e) => {
@@ -254,13 +254,13 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
               {stream.name || stream.channel}
             </span>
             {liveStatus?.isLive && typeof liveStatus.viewers === 'number' && (
-              <span className="hidden xl:inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-300 border border-ninja-700 shrink-0">
+              <span className="tile-meta items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-300 border border-ninja-700 shrink-0">
                 <Users className="w-2.5 h-2.5 text-slate-400" />
                 {liveStatus.viewers.toLocaleString('tr-TR')}
               </span>
             )}
             {stream.roleTag && (
-              <span className="hidden xl:inline-block text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-400 border border-ninja-700 truncate">
+              <span className="tile-meta text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-400 border border-ninja-700 truncate">
                 {stream.roleTag}
               </span>
             )}
@@ -302,6 +302,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
                     ? 'Odaktan çık (Otomatik ızgaraya dön)'
                     : 'Bu yayına odaklan (Tiyatro modu - yayın kesilmez)'
                 }
+                aria-label={isFocused ? 'Odaktan çık' : 'Bu yayına odaklan'}
                 className={`px-1.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 border transition-colors ${
                   isFocused
                     ? 'bg-orange-600 text-white border-orange-500'
@@ -311,12 +312,12 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
                 {isFocused ? (
                   <>
                     <Minimize2 className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline">Odakta</span>
+                    <span className="tile-action-label">Odakta</span>
                   </>
                 ) : (
                   <>
                     <Expand className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline">Odak</span>
+                    <span className="tile-action-label">Odak</span>
                   </>
                 )}
               </button>
@@ -332,6 +333,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
                   ? 'Sesi Yalnızca Buraya Ver (Kick için yayın anlık yenilenebilir)'
                   : 'Sesi Yalnızca Buraya Ver (Diğerlerini sustur)'
               }
+              aria-label={isSolo ? 'Tek Sesi kapat' : 'Sesi Yalnızca Buraya Ver'}
               className={`px-1.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 border transition-colors ${
                 isSolo
                   ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold'
@@ -339,7 +341,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
               }`}
             >
               <Headphones className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">{isSolo ? 'Tek Ses' : 'Solo'}</span>
+              <span className="tile-action-label">{isSolo ? 'Tek Ses' : 'Solo'}</span>
             </button>
 
             <button

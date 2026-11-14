@@ -181,17 +181,43 @@ export function swapStreamsById(
   return copy;
 }
 
-export type TheatreBand = '2' | '3' | '4' | '5' | '6-7' | '8-9' | '10+';
+export interface TheatreLayoutConfig {
+  mode: 'stack' | 'split';
+  secCols: 1 | 2;
+  secRows: number;
+  gridTemplateColumns: string;
+  gridTemplateRows?: string;
+}
 
 /**
- * Maps multi-stream count to container-query Theatre mode band.
+ * Computes responsive CSS Grid tracks for Theatre mode from stream count and measured canvas width.
  */
-export function getTheatreBand(count: number): TheatreBand {
-  if (count <= 2) return '2';
-  if (count === 3) return '3';
-  if (count === 4) return '4';
-  if (count === 5) return '5';
-  if (count <= 7) return '6-7';
-  if (count <= 9) return '8-9';
-  return '10+';
+export function getTheatreLayoutConfig(
+  count: number,
+  containerWidth: number
+): TheatreLayoutConfig {
+  const secCount = Math.max(1, count - 1);
+
+  if (containerWidth < 680) {
+    return {
+      mode: 'stack',
+      secCols: 1,
+      secRows: secCount,
+      gridTemplateColumns: 'minmax(0, 1fr)',
+    };
+  }
+
+  const secCols: 1 | 2 = containerWidth >= 1320 && count >= 5 ? 2 : 1;
+  const secRows = Math.ceil(secCount / secCols);
+
+  return {
+    mode: 'split',
+    secCols,
+    secRows,
+    gridTemplateColumns:
+      secCols === 2
+        ? 'minmax(0, 2.8fr) minmax(0, 1fr) minmax(0, 1fr)'
+        : 'minmax(0, 2fr) minmax(0, 1fr)',
+    gridTemplateRows: `repeat(${secRows}, minmax(175px, 1fr))`,
+  };
 }

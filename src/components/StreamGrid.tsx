@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Tv, Play, Radio, Users, Plus } from 'lucide-react';
 import { ALL_CONFIG_STREAMS, Platform, StreamItem, siteConfig } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
-import { getTheatreBand, parseChannelInput, sortStreamsLiveFirst } from '../utils/streamUtils';
+import { getTheatreLayoutConfig, parseChannelInput, sortStreamsLiveFirst } from '../utils/streamUtils';
 import { StreamPlayer } from './StreamPlayer';
 import { KonohaEmblem, SunaEmblem, VillageEmblem } from './VillageEmblems';
 
@@ -52,6 +52,34 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
   const [dragOverStreamId, setDragOverStreamId] = useState<string | null>(null);
   const [quickInput, setQuickInput] = useState('');
   const [quickPlatform, setQuickPlatform] = useState<Platform>('kick');
+  const gridWrapperRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>(() => ({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1280,
+    height: typeof window !== 'undefined' ? window.innerHeight - 48 : 800,
+  }));
+
+  const hasStreams = streams.length > 0;
+  useEffect(() => {
+    const el = gridWrapperRef.current;
+    if (!el) return;
+
+    const updateSize = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setContainerSize(prev =>
+          prev.width === rect.width && prev.height === rect.height
+            ? prev
+            : { width: rect.width, height: rect.height }
+        );
+      }
+    };
+
+    updateSize();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasStreams]);
 
   const onlineStreams = sortStreamsLiveFirst(
     ALL_CONFIG_STREAMS.filter(s => statuses[s.id]?.isLive),
@@ -318,9 +346,16 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
       ? focusedStreamId
       : streams[0]?.id;
 
-  const theatreBand = getTheatreBand(count);
-
   const isTheatreMulti = layoutMode === 'theatre' && count > 1;
+  const theatreConfig = isTheatreMulti
+    ? getTheatreLayoutConfig(count, containerSize.width)
+    : null;
+  const isSplitTheatre = theatreConfig?.mode === 'split';
+  const stickyMainHeight =
+    containerSize.height > 200
+      ? `${Math.floor(containerSize.height) - 17}px`
+      : 'calc(100dvh - 64px)';
+
   let containerGridClass = '';
   const isScrollableGrid = layoutMode === 'auto' && count > 6;
 
@@ -349,79 +384,109 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
   }
 
   return (
-    <div
-      data-theatre-band={isTheatreMulti ? theatreBand : undefined}
-      className={`flex-1 h-full w-full min-h-0 min-w-0 grid gap-2 p-2 ${
-        isTheatreMulti
-          ? 'theatre-grid'
-          : `${containerGridClass} ${
-              isScrollableGrid ? 'overflow-y-auto overflow-x-hidden' : 'overflow-hidden'
-            }`
-      }`}
-    >
-      {streams.map((stream, index) => {
-        const isMain = layoutMode === 'theatre' && stream.id === effectiveMainId;
-
-        let itemClass = 'h-full w-full min-h-0 min-w-0 flex items-center justify-center';
-
-        if (count === 1) {
-          itemClass += ' col-span-1 row-span-1 max-w-6xl mx-auto order-none';
-        } else if (isTheatreMulti) {
-          itemClass += isMain ? ' order-first theatre-main' : ' order-none theatre-sec';
-        } else {
-          itemClass += ' col-span-1 row-span-1 order-none';
-        }
-
-        return (
-          <div key={stream.id} className={itemClass}>
-            <StreamPlayer
-              stream={stream}
-              slotNumber={count > 1 && index < 9 ? index + 1 : undefined}
-              liveStatus={statuses[stream.id] ?? statuses[stream.channel.toLowerCase()]}
-              isMuted={mutedStreams.has(stream.id)}
-              isSolo={soloStreamId === stream.id}
-              onToggleMute={onToggleMute}
-              onSoloAudio={onSoloAudio}
-              onRemove={onRemoveStream}
-              isFocused={isMain}
-              canFocus={count > 1}
-              onFocus={(id) => onFocusStream(id, true)}
-              canMovePrev={layoutMode !== 'theatre' && index > 0}
-              canMoveNext={layoutMode !== 'theatre' && index < count - 1}
-              onMove={layoutMode !== 'theatre' ? onMoveStream : undefined}
-              canDrag={count > 1 && Boolean(onSwapStreams)}
-              isAnyDragging={draggingStreamId !== null}
-              isDraggingSelf={draggingStreamId === stream.id}
-              isDropTarget={
-                draggingStreamId !== null &&
-                draggingStreamId !== stream.id &&
-                dragOverStreamId === stream.id
+    <div ref={gridWrapperRef} className="flex-1 h-full w-full min-h-0 min-w-0 overflow-hidden">
+      <div
+        style={
+          theatreConfig
+            ? {
+                gridTemplateColumns: theatreConfig.gridTemplateColumns,
+                gridTemplateRows: theatreConfig.gridTemplateRows,
               }
-              onDragStartTile={(id) => {
-                setDraggingStreamId(id);
-                setDragOverStreamId(null);
-              }}
-              onDragEndTile={() => {
-                setDraggingStreamId(null);
-                setDragOverStreamId(null);
-              }}
-              onDragOverTile={(id) => {
-                if (draggingStreamId && draggingStreamId !== id) {
-                  setDragOverStreamId(id);
+            : undefined
+        }
+        className={`h-full w-full min-h-0 min-w-0 grid gap-2 p-2 ${
+          isTheatreMulti
+            ? isSplitTheatre
+              ? 'overflow-y-auto overflow-x-hidden'
+              : 'overflow-y-auto overflow-x-hidden auto-rows-[minmax(190px,1fr)]'
+            : `${containerGridClass} ${
+                isScrollableGrid ? 'overflow-y-auto overflow-x-hidden' : 'overflow-hidden'
+              }`
+        }`}
+      >
+        {streams.map((stream, index) => {
+          const isMain = layoutMode === 'theatre' && stream.id === effectiveMainId;
+
+          let itemClass = 'w-full min-h-0 min-w-0 flex items-center justify-center';
+          let itemStyle: React.CSSProperties | undefined;
+
+          if (count === 1) {
+            itemClass += ' h-full col-span-1 row-span-1 max-w-6xl mx-auto order-none';
+          } else if (isTheatreMulti && theatreConfig) {
+            if (isSplitTheatre) {
+              if (isMain) {
+                itemClass += ' order-first';
+                itemStyle = {
+                  gridColumn: '1 / 2',
+                  gridRow: `1 / span ${theatreConfig.secRows}`,
+                  position: 'sticky',
+                  top: 0,
+                  alignSelf: 'start',
+                  height: stickyMainHeight,
+                };
+              } else {
+                itemClass += ' h-full order-none';
+              }
+            } else {
+              itemClass += isMain
+                ? ' h-full min-h-[240px] order-first'
+                : ' h-full min-h-[185px] order-none';
+            }
+          } else {
+            itemClass += ' h-full col-span-1 row-span-1 order-none';
+          }
+
+          return (
+            <div key={stream.id} className={itemClass} style={itemStyle}>
+              <StreamPlayer
+                stream={stream}
+                slotNumber={count > 1 && index < 9 ? index + 1 : undefined}
+                liveStatus={statuses[stream.id] ?? statuses[stream.channel.toLowerCase()]}
+                isMuted={mutedStreams.has(stream.id)}
+                isSolo={soloStreamId === stream.id}
+                onToggleMute={onToggleMute}
+                onSoloAudio={onSoloAudio}
+                onRemove={onRemoveStream}
+                isFocused={isMain}
+                canFocus={count > 1}
+                onFocus={(id) => onFocusStream(id, true)}
+                canMovePrev={layoutMode !== 'theatre' && index > 0}
+                canMoveNext={layoutMode !== 'theatre' && index < count - 1}
+                onMove={layoutMode !== 'theatre' ? onMoveStream : undefined}
+                canDrag={count > 1 && Boolean(onSwapStreams)}
+                isAnyDragging={draggingStreamId !== null}
+                isDraggingSelf={draggingStreamId === stream.id}
+                isDropTarget={
+                  draggingStreamId !== null &&
+                  draggingStreamId !== stream.id &&
+                  dragOverStreamId === stream.id
                 }
-              }}
-              onDropTile={(targetId, transferredSourceId) => {
-                const sourceId = transferredSourceId || draggingStreamId;
-                if (sourceId && sourceId !== targetId) {
-                  onSwapStreams?.(sourceId, targetId);
-                }
-                setDraggingStreamId(null);
-                setDragOverStreamId(null);
-              }}
-            />
-          </div>
-        );
-      })}
+                onDragStartTile={(id) => {
+                  setDraggingStreamId(id);
+                  setDragOverStreamId(null);
+                }}
+                onDragEndTile={() => {
+                  setDraggingStreamId(null);
+                  setDragOverStreamId(null);
+                }}
+                onDragOverTile={(id) => {
+                  if (draggingStreamId && draggingStreamId !== id) {
+                    setDragOverStreamId(id);
+                  }
+                }}
+                onDropTile={(targetId, transferredSourceId) => {
+                  const sourceId = transferredSourceId || draggingStreamId;
+                  if (sourceId && sourceId !== targetId) {
+                    onSwapStreams?.(sourceId, targetId);
+                  }
+                  setDraggingStreamId(null);
+                  setDragOverStreamId(null);
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

@@ -8,7 +8,7 @@ import {
   selectVillagePresetStreams,
   moveStreamByDirection,
   swapStreamsById,
-  getTheatreBand,
+  getTheatreLayoutConfig,
 } from './streamUtils';
 import { StreamItem } from '../config/siteConfig';
 import type { LiveStatusInfo } from '../services/streamStatus';
@@ -159,18 +159,35 @@ describe('streamUtils', () => {
     });
   });
 
-  describe('getTheatreBand', () => {
-    it('maps stream counts to responsive theatre bands', () => {
-      expect(getTheatreBand(2)).toBe('2');
-      expect(getTheatreBand(3)).toBe('3');
-      expect(getTheatreBand(4)).toBe('4');
-      expect(getTheatreBand(5)).toBe('5');
-      expect(getTheatreBand(6)).toBe('6-7');
-      expect(getTheatreBand(7)).toBe('6-7');
-      expect(getTheatreBand(8)).toBe('8-9');
-      expect(getTheatreBand(9)).toBe('8-9');
-      expect(getTheatreBand(10)).toBe('10+');
-      expect(getTheatreBand(14)).toBe('10+');
+  describe('getTheatreLayoutConfig', () => {
+    it('stacks vertically on narrow widths', () => {
+      const cfg = getTheatreLayoutConfig(9, 480);
+      expect(cfg.mode).toBe('stack');
+      expect(cfg.gridTemplateColumns).toBe('minmax(0, 1fr)');
+    });
+
+    it('uses 1 right column with sticky split on medium widths even for 9 streams', () => {
+      const cfg = getTheatreLayoutConfig(9, 1040);
+      expect(cfg.mode).toBe('split');
+      expect(cfg.secCols).toBe(1);
+      expect(cfg.secRows).toBe(8);
+      expect(cfg.gridTemplateRows).toBe('repeat(8, minmax(175px, 1fr))');
+    });
+
+    it('uses 2 right columns (4 rows) for 9 streams on wide desktop widths', () => {
+      const cfg = getTheatreLayoutConfig(9, 1520);
+      expect(cfg.mode).toBe('split');
+      expect(cfg.secCols).toBe(2);
+      expect(cfg.secRows).toBe(4);
+      expect(cfg.gridTemplateColumns).toBe('minmax(0, 2.8fr) minmax(0, 1fr) minmax(0, 1fr)');
+      expect(cfg.gridTemplateRows).toBe('repeat(4, minmax(175px, 1fr))');
+    });
+
+    it('uses 1 right column for 2-4 streams even on wide desktop widths', () => {
+      const cfg = getTheatreLayoutConfig(4, 1520);
+      expect(cfg.mode).toBe('split');
+      expect(cfg.secCols).toBe(1);
+      expect(cfg.secRows).toBe(3);
     });
   });
 });
