@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ALL_CONFIG_STREAMS } from './config/siteConfig';
 import { useMultiwatch } from './hooks/useMultiwatch';
 import { Header } from './components/Header';
@@ -39,6 +39,79 @@ export const App: React.FC = () => {
     unmuteAll,
     shareLink,
   } = useMultiwatch();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      if (key === 'r') {
+        e.preventDefault();
+        setIsRosterOpen(prev => !prev);
+        return;
+      }
+      if (key === 'c') {
+        e.preventDefault();
+        setIsChatOpen(prev => !prev);
+        return;
+      }
+      if (key === 'm') {
+        e.preventDefault();
+        if (isAllMuted) {
+          unmuteAll();
+        } else {
+          muteAll();
+        }
+        return;
+      }
+      if (e.key === '?') {
+        e.preventDefault();
+        setToast({
+          id: `shortcuts-${Date.now()}`,
+          message: 'Kısayollar: R Kadro · C Sohbet · M Sessiz · 1-9 Odakla · Shift+1-9 Solo',
+          type: 'info',
+        });
+        return;
+      }
+
+      const digitMatch = /^Digit([1-9])$/.exec(e.code);
+      if (digitMatch) {
+        const index = Number(digitMatch[1]) - 1;
+        const targetStream = streams[index];
+        if (!targetStream) return;
+        e.preventDefault();
+        if (e.shiftKey) {
+          soloAudio(targetStream.id);
+        } else {
+          focusStream(targetStream.id);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    streams,
+    isAllMuted,
+    setIsRosterOpen,
+    setIsChatOpen,
+    muteAll,
+    unmuteAll,
+    focusStream,
+    soloAudio,
+    setToast,
+  ]);
 
   return (
     <div className="flex flex-col h-[100dvh] w-screen overflow-hidden bg-ninja-950 text-slate-100">

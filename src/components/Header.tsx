@@ -532,6 +532,31 @@ export const Header: React.FC<HeaderProps> = ({
                   <ExternalLink className="w-3.5 h-3.5 opacity-80" />
                 </a>
 
+                {/* Keyboard Shortcuts */}
+                <div className="p-2 rounded-lg bg-ninja-950 border border-ninja-700/70 space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Klavye Kısayolları
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] text-slate-300">
+                    <div className="flex items-center justify-between gap-1">
+                      <span>Kadro</span>
+                      <kbd className="px-1.5 py-0.5 rounded bg-ninja-800 border border-ninja-700 text-[10px] text-slate-200">R</kbd>
+                    </div>
+                    <div className="flex items-center justify-between gap-1">
+                      <span>Sohbet</span>
+                      <kbd className="px-1.5 py-0.5 rounded bg-ninja-800 border border-ninja-700 text-[10px] text-slate-200">C</kbd>
+                    </div>
+                    <div className="flex items-center justify-between gap-1">
+                      <span>Sessiz</span>
+                      <kbd className="px-1.5 py-0.5 rounded bg-ninja-800 border border-ninja-700 text-[10px] text-slate-200">M</kbd>
+                    </div>
+                    <div className="flex items-center justify-between gap-1">
+                      <span>Odak</span>
+                      <kbd className="px-1.5 py-0.5 rounded bg-ninja-800 border border-ninja-700 text-[10px] text-slate-200">1-9</kbd>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Streamer request & Creator credit */}
                 <div className="p-2.5 rounded-lg bg-ninja-950 border border-ninja-700/70 space-y-2">
                   <p className="text-[11px] leading-relaxed text-slate-300">
