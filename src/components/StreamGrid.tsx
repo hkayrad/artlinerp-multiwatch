@@ -248,6 +248,8 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
       : streams[0]?.id;
 
   let containerGridClass = '';
+  const isScrollableGrid =
+    (layoutMode === 'theatre' && count > 4) || (layoutMode === 'auto' && count > 6);
 
   if (layoutMode === 'theatre') {
     if (count === 1) {
@@ -259,7 +261,8 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
     } else if (count === 4) {
       containerGridClass = 'grid-cols-1 lg:grid-cols-12 grid-rows-4 lg:grid-rows-3';
     } else {
-      containerGridClass = 'grid-cols-1 lg:grid-cols-12 auto-rows-fr overflow-y-auto';
+      containerGridClass =
+        'grid-cols-1 lg:grid-cols-12 lg:grid-rows-[repeat(3,minmax(0,1fr))] lg:auto-rows-[minmax(160px,1fr)]';
     }
   } else if (layoutMode === '2x2') {
     if (count === 1) {
@@ -281,13 +284,15 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
     } else if (count <= 6) {
       containerGridClass = 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 grid-rows-6 sm:grid-rows-3 md:grid-rows-2';
     } else {
-      containerGridClass = 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-fr overflow-y-auto';
+      containerGridClass = 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[minmax(200px,1fr)]';
     }
   }
 
   return (
     <div
-      className={`flex-1 h-full w-full min-h-0 min-w-0 grid ${containerGridClass} gap-2 p-2 overflow-hidden`}
+      className={`flex-1 h-full w-full min-h-0 min-w-0 grid ${containerGridClass} gap-2 p-2 ${
+        isScrollableGrid ? 'overflow-y-auto overflow-x-hidden' : 'overflow-hidden'
+      }`}
     >
       {streams.map((stream, index) => {
         const isMain = layoutMode === 'theatre' && stream.id === effectiveMainId;
@@ -311,8 +316,8 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
               : ' order-none col-span-1 lg:col-span-3 row-span-1';
           } else {
             itemClass += isMain
-              ? ' order-first col-span-1 lg:col-span-9 lg:row-span-3'
-              : ' order-none col-span-1 lg:col-span-3';
+              ? ' order-first col-span-1 lg:col-start-1 lg:col-span-9 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-0 min-h-[240px] lg:min-h-0'
+              : ' order-none col-span-1 lg:col-start-10 lg:col-span-3 min-h-[180px] lg:min-h-0';
           }
         } else {
           itemClass += ' col-span-1 row-span-1 order-none';
@@ -322,6 +327,7 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
           <div key={stream.id} className={itemClass}>
             <StreamPlayer
               stream={stream}
+              liveStatus={statuses[stream.id] ?? statuses[stream.channel.toLowerCase()]}
               isMuted={mutedStreams.has(stream.id)}
               isSolo={soloStreamId === stream.id}
               onToggleMute={onToggleMute}

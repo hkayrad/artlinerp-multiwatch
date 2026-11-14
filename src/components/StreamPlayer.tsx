@@ -10,12 +10,15 @@ import {
   Minimize2,
   ChevronLeft,
   ChevronRight,
+  Users,
 } from 'lucide-react';
 import { StreamItem } from '../config/siteConfig';
+import { LiveStatusInfo } from '../services/streamStatus';
 import { getParentDomain } from '../utils/streamUtils';
 
 interface StreamPlayerProps {
   stream: StreamItem;
+  liveStatus?: LiveStatusInfo;
   isMuted: boolean;
   isSolo: boolean;
   onToggleMute: (id: string) => void;
@@ -54,6 +57,7 @@ function loadTwitchScript(): Promise<void> {
 
 export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
   stream,
+  liveStatus,
   isMuted,
   isSolo,
   onToggleMute,
@@ -168,11 +172,12 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
         {/* Always-visible Slim Control Bar (never swallowed by cross-origin iframes) */}
         <div
           onClick={() => canFocus && onFocus?.(stream.id)}
+          title={liveStatus?.title || stream.name || stream.channel}
           className={`h-8 px-2 bg-ninja-900 border-b border-ninja-700/80 flex items-center justify-between gap-2 shrink-0 select-none ${
             canFocus ? 'cursor-pointer' : ''
           }`}
         >
-          {/* Left: Platform + Streamer + Role */}
+          {/* Left: Platform + Streamer + Live/Viewers + Role */}
           <div className="flex items-center gap-1.5 min-w-0">
             <span
               className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold tracking-wide uppercase shrink-0 ${
@@ -181,9 +186,21 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = React.memo(({
             >
               {stream.platform}
             </span>
+            {liveStatus?.isLive && (
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"
+                title="Canlı yayında"
+              />
+            )}
             <span className="font-semibold text-xs text-slate-100 truncate">
               {stream.name || stream.channel}
             </span>
+            {liveStatus?.isLive && typeof liveStatus.viewers === 'number' && (
+              <span className="hidden xl:inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-300 border border-ninja-700 shrink-0">
+                <Users className="w-2.5 h-2.5 text-slate-400" />
+                {liveStatus.viewers.toLocaleString('tr-TR')}
+              </span>
+            )}
             {stream.roleTag && (
               <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-ninja-800 text-slate-400 border border-ninja-700 truncate">
                 {stream.roleTag}
