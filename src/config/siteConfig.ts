@@ -108,6 +108,15 @@ export const siteConfig: SiteConfig = {
           roleTag: 'Onayli Genin',
           isDefaultActive: false,
         },
+        {
+          id: 'eowinn',
+          name: 'Kagami Ren',
+          channel: 'eowinn',
+          platform: 'kick',
+          village: 'konoha',
+          roleTag: 'Genin',
+          isDefaultActive: false,
+        },
       ],
     },
     suna: {
@@ -153,7 +162,16 @@ export const siteConfig: SiteConfig = {
           village: 'suna',
           roleTag: 'Chunin',
           isDefaultActive: false,
-        }
+        },
+        {
+          id: 'zennv',
+          name: 'Zen Karatachi',
+          channel: 'zennv',
+          platform: 'kick',
+          village: 'suna',
+          roleTag: 'Jonin',
+          isDefaultActive: false,
+        },
       ],
     },
   },
