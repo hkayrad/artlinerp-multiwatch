@@ -185,3 +185,8 @@ export const siteConfig: SiteConfig = {
     },
   },
 };
+
+export const ALL_CONFIG_STREAMS: StreamItem[] = [
+  ...siteConfig.villages.konoha.streams,
+  ...siteConfig.villages.suna.streams,
+];

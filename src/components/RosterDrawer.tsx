@@ -15,7 +15,7 @@ import {
   Expand,
   MonitorPlay,
 } from 'lucide-react';
-import { StreamItem, siteConfig } from '../config/siteConfig';
+import { ALL_CONFIG_STREAMS, StreamItem, siteConfig } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
 import { sortStreamsLiveFirst } from '../utils/streamUtils';
@@ -84,13 +84,8 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
     activeChannelsMap.set(`${s.platform}:${s.channel.toLowerCase()}`, s.id);
   });
 
-  const allConfigStreams: StreamItem[] = [
-    ...siteConfig.villages.konoha.streams,
-    ...siteConfig.villages.suna.streams,
-  ];
-
   const filteredStreams = sortStreamsLiveFirst(
-    allConfigStreams.filter(stream => {
+    ALL_CONFIG_STREAMS.filter(stream => {
       if (activeTab === 'konoha' && stream.village !== 'konoha') return false;
       if (activeTab === 'suna' && stream.village !== 'suna') return false;
 
@@ -114,7 +109,7 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
     statuses
   );
 
-  const liveTotalCount = allConfigStreams.filter(s => statuses[s.id]?.isLive).length;
+  const liveTotalCount = ALL_CONFIG_STREAMS.filter(s => statuses[s.id]?.isLive).length;
   const konohaCount = siteConfig.villages.konoha.streams.length;
   const sunaCount = siteConfig.villages.suna.streams.length;
 
@@ -202,7 +197,7 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
           >
             <AllVillagesEmblem className="w-3 h-3 shrink-0" />
             <span className="truncate">Tümü</span>
-            <span className="text-[10px] opacity-80">{allConfigStreams.length}</span>
+            <span className="text-[10px] opacity-80">{ALL_CONFIG_STREAMS.length}</span>
           </button>
 
           <button

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { StreamItem, siteConfig } from '../config/siteConfig';
+import { ALL_CONFIG_STREAMS, StreamItem, siteConfig } from '../config/siteConfig';
 import { LayoutMode } from '../components/StreamGrid';
 import {
   hydrateStreamsFromQuery,
@@ -17,11 +17,6 @@ interface MultiwatchHistoryState {
   layoutMode: LayoutMode;
   focusedStreamId: string | null;
 }
-
-const ALL_CONFIG_STREAMS: StreamItem[] = [
-  ...siteConfig.villages.konoha.streams,
-  ...siteConfig.villages.suna.streams,
-];
 
 function getDefaultStreams(): StreamItem[] {
   const defaultVillage = siteConfig.defaultVillage;

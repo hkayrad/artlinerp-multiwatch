@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { StreamItem, siteConfig } from '../config/siteConfig';
+import { ALL_CONFIG_STREAMS } from '../config/siteConfig';
 import { fetchMultipleStreamStatuses, LiveStatusInfo } from '../services/streamStatus';
 
 export function useLiveStatus() {
@@ -7,13 +7,8 @@ export function useLiveStatus() {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkStatuses = useCallback(async () => {
-    const allConfigStreams: StreamItem[] = [
-      ...siteConfig.villages.konoha.streams,
-      ...siteConfig.villages.suna.streams,
-    ];
-
     try {
-      const results = await fetchMultipleStreamStatuses(allConfigStreams);
+      const results = await fetchMultipleStreamStatuses(ALL_CONFIG_STREAMS);
       setStatuses(results);
     } finally {
       setIsLoading(false);

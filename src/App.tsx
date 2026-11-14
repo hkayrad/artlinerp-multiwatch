@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { siteConfig } from './config/siteConfig';
+import React from 'react';
+import { ALL_CONFIG_STREAMS } from './config/siteConfig';
 import { useMultiwatch } from './hooks/useMultiwatch';
 import { Header } from './components/Header';
 import { RosterDrawer } from './components/RosterDrawer';
@@ -40,18 +40,13 @@ export const App: React.FC = () => {
     shareLink,
   } = useMultiwatch();
 
-  const allConfigStreams = useMemo(
-    () => [...siteConfig.villages.konoha.streams, ...siteConfig.villages.suna.streams],
-    []
-  );
-
   return (
     <div className="flex flex-col h-[100dvh] w-screen overflow-hidden bg-ninja-950 text-slate-100">
       {/* Slim Top Command Bar */}
       <Header
         activeVillage={activeVillage}
         streams={streams}
-        allConfigStreams={allConfigStreams}
+        allConfigStreams={ALL_CONFIG_STREAMS}
         statuses={statuses}
         isStatusLoading={isStatusLoading}
         layoutMode={layoutMode}

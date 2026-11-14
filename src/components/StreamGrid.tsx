@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tv, Play, Radio, Users } from 'lucide-react';
-import { StreamItem, siteConfig } from '../config/siteConfig';
+import { ALL_CONFIG_STREAMS, StreamItem } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
 import { sortStreamsLiveFirst } from '../utils/streamUtils';
@@ -46,13 +46,8 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
   onAddStream,
   onAddMultipleStreams,
 }) => {
-  const allConfigStreams: StreamItem[] = [
-    ...siteConfig.villages.konoha.streams,
-    ...siteConfig.villages.suna.streams,
-  ];
-
   const onlineStreams = sortStreamsLiveFirst(
-    allConfigStreams.filter(s => statuses[s.id]?.isLive),
+    ALL_CONFIG_STREAMS.filter(s => statuses[s.id]?.isLive),
     statuses
   );
 
