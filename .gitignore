@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Fanart local runtime data & secrets
+public/api/config.php
+public/uploads/fanart/*
+!public/uploads/fanart/.htaccess
+!public/uploads/fanart/pending/
+public/uploads/fanart/pending/*
+!public/uploads/fanart/pending/.htaccess
+public/fanart-data/*
+!public/fanart-data/.htaccess
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

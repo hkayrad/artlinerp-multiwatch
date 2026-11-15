@@ -1,26 +1,31 @@
-# ----------------------------------------------------------------------
-# 1. Google ve Arama Motoru İndeksleme Engeli (X-Robots-Tag)
-# ----------------------------------------------------------------------
+Options -Indexes
+
+# Prevent search engine indexing, caching, and AI training across all pages & uploaded images
 <IfModule mod_headers.c>
-    Header set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai"
 </IfModule>
 
-# ----------------------------------------------------------------------
-# 2. AI Botları ve Web Kazıyıcıları (Scrapers) Engelleme
-# ----------------------------------------------------------------------
 <IfModule mod_rewrite.c>
-    RewriteEngine On
+  RewriteEngine On
+  RewriteBase /
 
-    # Bilinen AI ve veri madenciliği botlarını 403 Forbidden ile engelle
-    RewriteCond %{HTTP_USER_AGENT} (Google-Extended|GPTBot|ChatGPT-User|CCBot|anthropic-ai|ClaudeBot|Claude-Web|Bytespider|PerplexityBot|Amazonbot|FacebookBot|cohere-ai|Diffbot) [NC]
-    RewriteRule ^ - [F,L]
+  # Block known AI crawlers and scrapers from pages, APIs, and fanart images
+  RewriteCond %{REQUEST_URI} !^/robots\.txt$
+  RewriteCond %{HTTP_USER_AGENT} (GPTBot|ChatGPT-User|OAI-SearchBot|Google-Extended|CCBot|anthropic-ai|ClaudeBot|Claude-Web|PerplexityBot|Perplexity-User|Bytespider|Applebot-Extended|FacebookBot|Meta-ExternalAgent|Amazonbot|cohere-ai|Diffbot|Omgilibot|YouBot|Timpibot|ImagesiftBot|PetalBot|AI2Bot) [NC]
+  RewriteRule ^ - [F,L]
 
-    # ------------------------------------------------------------------
-    # 3. React / Vite SPA Yönlendirmesi (Single Page Application)
-    # ------------------------------------------------------------------
-    RewriteBase /
-    RewriteRule ^index\.html$ - [L]
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule . /index.html [L]
+  # Allow PHP API and approved uploaded images directly
+  RewriteRule ^api/ - [L]
+  RewriteRule ^uploads/ - [L]
+
+  # Block direct access to internal JSON data directory
+  RewriteRule ^fanart-data/ - [F,L]
+
+  # Serve existing files and directories normally
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # SPA fallback for /, /fanart, /admin
+  RewriteRule ^ index.html [L]
 </IfModule>

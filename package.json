@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "preview:apache": "docker run --rm -p 8080:80 -e APACHE_RUN_USER=#$(id -u) -e APACHE_RUN_GROUP=#$(id -g) -v \"$PWD/dist:/var/www/html\" php:8.2-apache bash -lc \"a2enmod rewrite headers >/dev/null && sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf && apache2-foreground\"",
     "test": "vitest run"
   },
   "dependencies": {

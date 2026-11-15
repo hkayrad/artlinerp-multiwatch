@@ -14,15 +14,21 @@ import {
   ChevronDown,
   Copy,
   Check,
+  Tv,
+  Image as ImageIcon,
+  Shield,
 } from 'lucide-react';
 import { StreamItem, siteConfig } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
+import { AppRoute } from '../hooks/useAppRoute';
 import { LayoutMode } from './StreamGrid';
 import { KonohaEmblem, SunaEmblem, AllVillagesEmblem } from './VillageEmblems';
 import { LiveQuickSwitch } from './LiveQuickSwitch';
 
 interface HeaderProps {
+  activeRoute: AppRoute;
+  onNavigateRoute: (route: AppRoute) => void;
   activeVillage: 'konoha' | 'suna' | 'all' | 'custom';
   streams: StreamItem[];
   allConfigStreams: StreamItem[];
@@ -47,6 +53,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  activeRoute,
+  onNavigateRoute,
   activeVillage,
   streams,
   allConfigStreams,
@@ -114,20 +122,28 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="h-12 bg-ninja-900 border-b border-ninja-700/80 sticky top-0 z-30 select-none shrink-0">
       <div className="h-full max-w-[1920px] mx-auto px-2.5 sm:px-3.5 flex items-center justify-between gap-2">
-        {/* Left: Brand & Live Quick-Switch */}
+        {/* Left: Brand, Route Switcher & Live Quick-Switch */}
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={() => {
-              if (streamCount > 0) onClearAll();
+              if (activeRoute !== 'multiwatch') {
+                onNavigateRoute('multiwatch');
+              } else if (streamCount > 0) {
+                onClearAll();
+              }
             }}
             title={
-              streamCount > 0
+              activeRoute !== 'multiwatch'
+                ? `${siteConfig.serverName} × ${siteConfig.creatorName} — Yayınlara dön`
+                : streamCount > 0
                 ? `${siteConfig.serverName} × ${siteConfig.creatorName} — Ana ekrana dön`
                 : `${siteConfig.serverName} × ${siteConfig.creatorName}`
             }
             className={`flex items-center gap-1.5 sm:gap-2 shrink-0 rounded-lg transition-opacity ${
-              streamCount > 0 ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'
+              activeRoute !== 'multiwatch' || streamCount > 0
+                ? 'hover:opacity-80 cursor-pointer'
+                : 'cursor-default'
             }`}
           >
             <div className="flex items-center gap-1 shrink-0">
@@ -159,22 +175,57 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
-          <div className="h-4 w-px bg-ninja-700/70 hidden sm:block" />
+          <nav
+            aria-label="Sayfa seçimi"
+            className="flex items-center gap-0.5 bg-ninja-950 p-0.5 rounded-lg border border-ninja-700/80 shrink-0"
+          >
+            <button
+              type="button"
+              onClick={() => onNavigateRoute('multiwatch')}
+              className={`flex items-center gap-1.5 h-7 px-2 rounded-md text-xs font-semibold transition-colors ${
+                activeRoute === 'multiwatch'
+                  ? 'bg-orange-600 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-ninja-800'
+              }`}
+            >
+              <Tv className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden md:inline">Yayınlar</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigateRoute('fanart')}
+              className={`flex items-center gap-1.5 h-7 px-2 rounded-md text-xs font-semibold transition-colors ${
+                activeRoute === 'fanart' || activeRoute === 'admin'
+                  ? 'bg-orange-600 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-ninja-800'
+              }`}
+            >
+              <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+              <span>Fanart</span>
+            </button>
+          </nav>
 
-          <LiveQuickSwitch
-            allConfigStreams={allConfigStreams}
-            activeStreams={streams}
-            statuses={statuses}
-            isLoading={isStatusLoading}
-            onRefresh={onRefreshStatuses}
-            onAddStream={onAddStream}
-            onRemoveStream={onRemoveStream}
-            onAddMultipleStreams={onAddMultipleStreams}
-            onOpenRoster={onToggleRoster}
-          />
+          {activeRoute === 'multiwatch' && (
+            <>
+              <div className="h-4 w-px bg-ninja-700/70 hidden sm:block" />
+
+              <LiveQuickSwitch
+                allConfigStreams={allConfigStreams}
+                activeStreams={streams}
+                statuses={statuses}
+                isLoading={isStatusLoading}
+                onRefresh={onRefreshStatuses}
+                onAddStream={onAddStream}
+                onRemoveStream={onRemoveStream}
+                onAddMultipleStreams={onAddMultipleStreams}
+                onOpenRoster={onToggleRoster}
+              />
+            </>
+          )}
         </div>
 
-        {/* Center: Smart Village Presets */}
+        {/* Center: Smart Village Presets (Multiwatch only) */}
+        {activeRoute === 'multiwatch' && (
         <div ref={presetMenuRef} className="relative flex items-center">
           <div className="flex items-center gap-0.5 bg-ninja-950 p-0.5 rounded-lg border border-ninja-700/80">
             <button
@@ -320,9 +371,29 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
         </div>
+        )}
 
         {/* Right: Unified Controls */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {activeRoute !== 'multiwatch' && (
+            <button
+              type="button"
+              onClick={() => onNavigateRoute(activeRoute === 'admin' ? 'fanart' : 'admin')}
+              className={`flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold border transition-colors ${
+                activeRoute === 'admin'
+                  ? 'bg-orange-600 text-white border-orange-500'
+                  : 'bg-ninja-950 hover:bg-ninja-800 text-slate-300 border-ninja-700/80 hover:text-white'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5 text-orange-400" />
+              <span className="hidden sm:inline">
+                {activeRoute === 'admin' ? 'Galeri' : 'Admin'}
+              </span>
+            </button>
+          )}
+
+          {activeRoute === 'multiwatch' && (
+          <>
           {/* Unified 3-way Layout Switcher */}
           <div className="hidden lg:flex items-center bg-ninja-950 p-0.5 rounded-lg border border-ninja-700/80">
             <button
@@ -448,6 +519,8 @@ export const Header: React.FC<HeaderProps> = ({
             <Share2 className="w-3.5 h-3.5 text-sky-400" />
             <span className="hidden lg:inline">Paylaş</span>
           </button>
+          </>
+          )}
 
           {/* Overflow Menu (Mobile controls + Community & Creator info) */}
           <div ref={moreMenuRef} className="relative">
@@ -468,6 +541,8 @@ export const Header: React.FC<HeaderProps> = ({
 
             {isMoreOpen && (
               <div className="absolute right-0 top-full mt-1.5 w-72 bg-ninja-900 border border-ninja-700 rounded-xl shadow-2xl p-2 z-50 animate-fade-in space-y-2">
+                {activeRoute === 'multiwatch' && (
+                <>
                 {/* Layout controls on smaller viewports */}
                 <div className="lg:hidden pb-2 border-b border-ninja-700/70">
                   <div className="px-2 pb-1.5 text-[11px] font-semibold text-slate-400">
@@ -548,6 +623,10 @@ export const Header: React.FC<HeaderProps> = ({
                     <span>URL Paylaş</span>
                   </button>
                 </div>
+                </>
+                )}
+
+                {/* Community Discord */}
 
                 {/* Community Discord */}
                 <a
@@ -564,6 +643,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </a>
 
                 {/* Keyboard Shortcuts */}
+                {activeRoute === 'multiwatch' && (
                 <div className="p-2 rounded-lg bg-ninja-950 border border-ninja-700/70 space-y-1">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Klavye Kısayolları
@@ -587,6 +667,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Streamer request & Creator credit */}
                 <div className="p-2.5 rounded-lg bg-ninja-950 border border-ninja-700/70 space-y-2">
