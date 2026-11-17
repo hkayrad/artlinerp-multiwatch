@@ -1,0 +1,112 @@
+{
+  "streams": [
+    {
+      "id": "zade",
+      "name": "Akio Akasaki",
+      "channel": "zade",
+      "platform": "kick",
+      "village": "konoha",
+      "roleTag": "Onayli Chunin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "zarafell",
+      "name": "Akiwata Fumiamochi",
+      "channel": "zarafell",
+      "platform": "kick",
+      "village": "suna",
+      "roleTag": "Onayli Genin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "efes",
+      "name": "Huren Kurozane",
+      "channel": "efes",
+      "platform": "kick",
+      "village": "suna",
+      "roleTag": "Tokubetsu Chunin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "arthasfyre",
+      "name": "Indra Uchiha",
+      "channel": "arthasfyre",
+      "platform": "kick",
+      "village": "konoha",
+      "roleTag": "Hokage",
+      "isDefaultActive": false
+    },
+    {
+      "id": "eowinn",
+      "name": "Kagami Ren",
+      "channel": "eowinn",
+      "platform": "kick",
+      "village": "konoha",
+      "roleTag": "Genin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "egeomeer",
+      "name": "Kinma Senju",
+      "channel": "egeomeer",
+      "platform": "kick",
+      "village": "konoha",
+      "roleTag": "Jonin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "telcaris",
+      "name": "Kiryu Arata",
+      "channel": "telcaris",
+      "platform": "kick",
+      "village": "konoha",
+      "roleTag": "Onayli Genin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "capori",
+      "name": "Raku Kazehara",
+      "channel": "capori",
+      "platform": "kick",
+      "village": "suna",
+      "roleTag": "Genin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "youngtizan",
+      "name": "Reima Senju",
+      "channel": "YoungTizan",
+      "platform": "kick",
+      "village": "konoha",
+      "roleTag": "Tokubetsu Chunin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "kazedreax",
+      "name": "Shiki Ayatsuri",
+      "channel": "kazedreax",
+      "platform": "kick",
+      "village": "suna",
+      "roleTag": "Chunin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "kel-kesis",
+      "name": "Shohei Morita",
+      "channel": "kel-kesis",
+      "platform": "kick",
+      "village": "suna",
+      "roleTag": "Onayli Genin",
+      "isDefaultActive": false
+    },
+    {
+      "id": "zennv",
+      "name": "Zen Karatachi",
+      "channel": "zennv",
+      "platform": "kick",
+      "village": "suna",
+      "roleTag": "Jonin",
+      "isDefaultActive": false
+    }
+  ]
+}

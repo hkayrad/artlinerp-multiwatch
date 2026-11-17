@@ -86,9 +86,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   const streamCount = streams.length;
   const is2x2Disabled = streamCount > 4;
-  const konohaLiveCount = siteConfig.villages.konoha.streams.filter(s => statuses[s.id]?.isLive).length;
-  const sunaLiveCount = siteConfig.villages.suna.streams.filter(s => statuses[s.id]?.isLive).length;
-  const totalLiveCount = konohaLiveCount + sunaLiveCount;
+  const konohaStreams = allConfigStreams.filter(s => s.village === 'konoha');
+  const sunaStreams = allConfigStreams.filter(s => s.village === 'suna');
+  const konohaLiveCount = konohaStreams.filter(s => statuses[s.id]?.isLive).length;
+  const sunaLiveCount = sunaStreams.filter(s => statuses[s.id]?.isLive).length;
+  const totalLiveCount = allConfigStreams.filter(s => statuses[s.id]?.isLive).length;
 
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
@@ -333,7 +335,7 @@ export const Header: React.FC<HeaderProps> = ({
                   Konoha (Tümü)
                 </span>
                 <span className="font-mono text-[11px] text-slate-400">
-                  {siteConfig.villages.konoha.streams.length}
+                  {konohaStreams.length}
                 </span>
               </button>
               <button
@@ -349,7 +351,7 @@ export const Header: React.FC<HeaderProps> = ({
                   Suna (Tümü)
                 </span>
                 <span className="font-mono text-[11px] text-slate-400">
-                  {siteConfig.villages.suna.streams.length}
+                  {sunaStreams.length}
                 </span>
               </button>
               <button
@@ -626,7 +628,20 @@ export const Header: React.FC<HeaderProps> = ({
                 </>
                 )}
 
-                {/* Community Discord */}
+                {/* Admin Panel shortcut */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigateRoute('admin');
+                    setIsMoreOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-ninja-950 hover:bg-ninja-800 text-slate-200 border border-ninja-700/80 text-xs font-semibold transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-orange-400" />
+                    <span>Yönetim Paneli (Yayıncı & Fanart)</span>
+                  </span>
+                </button>
 
                 {/* Community Discord */}
                 <a

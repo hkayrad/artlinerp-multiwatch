@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
-import { ALL_CONFIG_STREAMS } from './config/siteConfig';
+import React, { useEffect, useState } from 'react';
+import { ALL_CONFIG_STREAMS, StreamItem } from './config/siteConfig';
+import { fetchStreamers } from './services/streamerService';
 import { useMultiwatch } from './hooks/useMultiwatch';
 import { useAppRoute } from './hooks/useAppRoute';
 import { Header } from './components/Header';
@@ -11,6 +12,20 @@ import { Toast } from './components/Toast';
 
 export const App: React.FC = () => {
   const { route, navigate } = useAppRoute();
+  const [rosterStreams, setRosterStreams] = useState<StreamItem[]>(ALL_CONFIG_STREAMS);
+
+  useEffect(() => {
+    let active = true;
+    fetchStreamers().then(res => {
+      if (active) {
+        setRosterStreams(res.streams);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const {
     streams,
     statuses,
@@ -42,7 +57,7 @@ export const App: React.FC = () => {
     muteAll,
     unmuteAll,
     shareLink,
-  } = useMultiwatch();
+  } = useMultiwatch(rosterStreams);
 
   useEffect(() => {
     if (route !== 'multiwatch') return;
@@ -128,7 +143,7 @@ export const App: React.FC = () => {
         onNavigateRoute={navigate}
         activeVillage={activeVillage}
         streams={streams}
-        allConfigStreams={ALL_CONFIG_STREAMS}
+        allConfigStreams={rosterStreams}
         statuses={statuses}
         isStatusLoading={isStatusLoading}
         layoutMode={layoutMode}
@@ -155,6 +170,7 @@ export const App: React.FC = () => {
           <RosterDrawer
             isOpen={isRosterOpen}
             onClose={() => setIsRosterOpen(false)}
+            rosterStreams={rosterStreams}
             activeStreams={streams}
             statuses={statuses}
             isStatusLoading={isStatusLoading}
@@ -174,6 +190,7 @@ export const App: React.FC = () => {
           <main className="flex-1 min-h-0 flex flex-col min-w-0 overflow-hidden bg-ninja-950">
             <StreamGrid
               streams={streams}
+              rosterStreams={rosterStreams}
               statuses={statuses}
               isStatusLoading={isStatusLoading}
               layoutMode={layoutMode}
@@ -202,6 +219,8 @@ export const App: React.FC = () => {
       ) : (
         <FanartPage
           mode={route === 'admin' ? 'admin' : 'fanart'}
+          rosterStreams={rosterStreams}
+          onStreamersChange={setRosterStreams}
           onNavigate={navigate}
           onNotify={setToast}
         />

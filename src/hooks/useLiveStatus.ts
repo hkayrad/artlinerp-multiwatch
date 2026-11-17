@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ALL_CONFIG_STREAMS, StreamItem } from '../config/siteConfig';
+import { StreamItem } from '../config/siteConfig';
 import { fetchMultipleStreamStatuses, LiveStatusInfo } from '../services/streamStatus';
 
-export function useLiveStatus(extraStreams: StreamItem[] = []) {
+export function useLiveStatus(rosterStreams: StreamItem[], extraStreams: StreamItem[] = []) {
   const [statuses, setStatuses] = useState<Record<string, LiveStatusInfo>>({});
   const [isLoading, setIsLoading] = useState(true);
 
@@ -11,10 +11,10 @@ export function useLiveStatus(extraStreams: StreamItem[] = []) {
       setIsLoading(true);
     }
 
-    // Deduplicate config streams + any active custom streams
+    // Deduplicate roster streams + any active custom streams
     const seen = new Set<string>();
     const combined: StreamItem[] = [];
-    for (const s of [...ALL_CONFIG_STREAMS, ...extraStreams]) {
+    for (const s of [...rosterStreams, ...extraStreams]) {
       const key = `${s.platform}:${s.channel.toLowerCase()}`;
       if (!seen.has(key)) {
         seen.add(key);
@@ -28,7 +28,7 @@ export function useLiveStatus(extraStreams: StreamItem[] = []) {
     } finally {
       setIsLoading(false);
     }
-  }, [extraStreams]);
+  }, [rosterStreams, extraStreams]);
 
   useEffect(() => {
     checkStatuses(false);

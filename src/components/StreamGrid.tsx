@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Play, Radio, Users, Plus } from 'lucide-react';
-import { ALL_CONFIG_STREAMS, Platform, StreamItem, siteConfig } from '../config/siteConfig';
+import { Platform, StreamItem, siteConfig } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
 import { getTheatreLayoutConfig, parseChannelInput, sortStreamsLiveFirst } from '../utils/streamUtils';
@@ -11,6 +11,7 @@ export type LayoutMode = 'auto' | '2x2' | 'theatre';
 
 interface StreamGridProps {
   streams: StreamItem[];
+  rosterStreams: StreamItem[];
   statuses: Record<string, LiveStatusInfo>;
   isStatusLoading: boolean;
   layoutMode: LayoutMode;
@@ -31,6 +32,7 @@ interface StreamGridProps {
 
 export const StreamGrid: React.FC<StreamGridProps> = ({
   streams,
+  rosterStreams,
   statuses,
   isStatusLoading,
   layoutMode,
@@ -81,12 +83,14 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
     return () => observer.disconnect();
   }, [hasStreams]);
 
+  const konohaStreams = rosterStreams.filter(s => s.village === 'konoha');
+  const sunaStreams = rosterStreams.filter(s => s.village === 'suna');
   const onlineStreams = sortStreamsLiveFirst(
-    ALL_CONFIG_STREAMS.filter(s => statuses[s.id]?.isLive),
+    rosterStreams.filter(s => statuses[s.id]?.isLive),
     statuses
   );
-  const konohaLiveCount = siteConfig.villages.konoha.streams.filter(s => statuses[s.id]?.isLive).length;
-  const sunaLiveCount = siteConfig.villages.suna.streams.filter(s => statuses[s.id]?.isLive).length;
+  const konohaLiveCount = konohaStreams.filter(s => statuses[s.id]?.isLive).length;
+  const sunaLiveCount = sunaStreams.filter(s => statuses[s.id]?.isLive).length;
 
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,7 +328,7 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
                   <span>
                     {konohaLiveCount > 0
                       ? `Konoha Canlı (${konohaLiveCount})`
-                      : `Konoha Tümü (${siteConfig.villages.konoha.streams.length})`}
+                      : `Konoha Tümü (${konohaStreams.length})`}
                   </span>
                 </button>
 
@@ -337,7 +341,7 @@ export const StreamGrid: React.FC<StreamGridProps> = ({
                   <span>
                     {sunaLiveCount > 0
                       ? `Suna Canlı (${sunaLiveCount})`
-                      : `Suna Tümü (${siteConfig.villages.suna.streams.length})`}
+                      : `Suna Tümü (${sunaStreams.length})`}
                   </span>
                 </button>
               </div>

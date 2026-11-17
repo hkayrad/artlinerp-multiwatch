@@ -4,6 +4,7 @@ import {
   serializeStreamsToQuery,
   deserializeStreamsFromQuery,
   hydrateStreamsFromQuery,
+  sortStreamsAlphabetically,
   sortStreamsLiveFirst,
   selectVillagePresetStreams,
   moveStreamByDirection,
@@ -92,6 +93,34 @@ describe('streamUtils', () => {
     it('sorts live streams before offline streams by descending viewer count', () => {
       const sorted = sortStreamsLiveFirst(sampleStreams, statuses);
       expect(sorted.map(s => s.id)).toEqual(['s3', 's2', 's1']);
+    });
+
+    it('sorts offline streams and viewer-count ties alphabetically', () => {
+      const unsorted: StreamItem[] = [
+        { id: 'o-z', name: 'Zen Karatachi', channel: 'zennv', platform: 'kick', village: 'suna' },
+        { id: 'l-b', name: 'Indra Uchiha', channel: 'arthasfyre', platform: 'kick', village: 'konoha' },
+        { id: 'o-a', name: 'Akio Akasaki', channel: 'zade', platform: 'kick', village: 'konoha' },
+        { id: 'l-a', name: 'Akiwata Fumiamochi', channel: 'zarafell', platform: 'kick', village: 'suna' },
+      ];
+      const tiedStatuses: Record<string, LiveStatusInfo> = {
+        'o-z': { channel: 'zennv', isLive: false },
+        'o-a': { channel: 'zade', isLive: false },
+        'l-b': { channel: 'arthasfyre', isLive: true, viewers: 50 },
+        'l-a': { channel: 'zarafell', isLive: true, viewers: 50 },
+      };
+
+      expect(sortStreamsLiveFirst(unsorted, tiedStatuses).map(s => s.id)).toEqual([
+        'l-a',
+        'l-b',
+        'o-a',
+        'o-z',
+      ]);
+      expect(sortStreamsAlphabetically(unsorted).map(s => s.id)).toEqual([
+        'o-a',
+        'l-a',
+        'l-b',
+        'o-z',
+      ]);
     });
 
     it('selectVillagePresetStreams returns only live streams in live mode', () => {

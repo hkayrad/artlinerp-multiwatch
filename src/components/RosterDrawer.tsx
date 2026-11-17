@@ -15,7 +15,7 @@ import {
   Expand,
   MonitorPlay,
 } from 'lucide-react';
-import { ALL_CONFIG_STREAMS, Platform, StreamItem, siteConfig } from '../config/siteConfig';
+import { Platform, StreamItem, siteConfig } from '../config/siteConfig';
 import { LiveStatusInfo } from '../services/streamStatus';
 import { VillagePresetMode } from '../hooks/useMultiwatch';
 import { parseChannelInput, sortStreamsLiveFirst } from '../utils/streamUtils';
@@ -24,6 +24,7 @@ import { KonohaEmblem, SunaEmblem, AllVillagesEmblem, VillageEmblem } from './Vi
 interface RosterDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  rosterStreams: StreamItem[];
   activeStreams: StreamItem[];
   statuses: Record<string, LiveStatusInfo>;
   isStatusLoading: boolean;
@@ -43,6 +44,7 @@ interface RosterDrawerProps {
 export const RosterDrawer: React.FC<RosterDrawerProps> = ({
   isOpen,
   onClose,
+  rosterStreams,
   activeStreams,
   statuses,
   isStatusLoading,
@@ -89,12 +91,12 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
   });
 
   const configChannelKeys = new Set(
-    ALL_CONFIG_STREAMS.map(s => `${s.platform}:${s.channel.toLowerCase()}`)
+    rosterStreams.map(s => `${s.platform}:${s.channel.toLowerCase()}`)
   );
   const customActiveStreams = activeStreams.filter(
     s => !configChannelKeys.has(`${s.platform}:${s.channel.toLowerCase()}`)
   );
-  const allRosterStreams = [...customActiveStreams, ...ALL_CONFIG_STREAMS];
+  const allRosterStreams = [...customActiveStreams, ...rosterStreams];
 
   const handleAddCustomStream = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,8 +140,8 @@ export const RosterDrawer: React.FC<RosterDrawerProps> = ({
   );
 
   const liveTotalCount = allRosterStreams.filter(s => statuses[s.id]?.isLive).length;
-  const konohaCount = siteConfig.villages.konoha.streams.length;
-  const sunaCount = siteConfig.villages.suna.streams.length;
+  const konohaCount = rosterStreams.filter(s => s.village === 'konoha').length;
+  const sunaCount = rosterStreams.filter(s => s.village === 'suna').length;
 
   return (
     <aside

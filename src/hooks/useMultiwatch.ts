@@ -49,36 +49,43 @@ function saveUiPrefs(prefs: SavedUiPrefs): void {
   }
 }
 
-function getDefaultStreams(): StreamItem[] {
+function getDefaultStreams(rosterStreams: StreamItem[]): StreamItem[] {
   const defaultVillage = siteConfig.defaultVillage;
-  if (defaultVillage === 'konoha') {
-    return siteConfig.villages.konoha.streams.filter(s => s.isDefaultActive);
+  if (defaultVillage === 'konoha' || defaultVillage === 'suna') {
+    return rosterStreams.filter(s => s.village === defaultVillage && s.isDefaultActive);
   }
-  if (defaultVillage === 'suna') {
-    return siteConfig.villages.suna.streams.filter(s => s.isDefaultActive);
-  }
-  return ALL_CONFIG_STREAMS.filter(s => s.isDefaultActive);
+  return rosterStreams.filter(s => s.isDefaultActive);
 }
 
-export function useMultiwatch() {
+export function useMultiwatch(rosterStreams: StreamItem[] = ALL_CONFIG_STREAMS) {
+  const rosterStreamsRef = useRef(rosterStreams);
+  rosterStreamsRef.current = rosterStreams;
+
+  const hasUserInteractedRef = useRef(false);
+
   const [streams, setStreams] = useState<StreamItem[]>(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const streamsQuery = searchParams.get('streams');
       if (streamsQuery) {
-        const hydrated = hydrateStreamsFromQuery(streamsQuery, ALL_CONFIG_STREAMS);
+        const hydrated = hydrateStreamsFromQuery(streamsQuery, rosterStreams);
         if (hydrated.length > 0) return hydrated;
       }
     }
 
-    return getDefaultStreams();
+    return getDefaultStreams(rosterStreams);
   });
 
-  const customStreams = useMemo(
-    () => streams.filter(s => s.village === 'diger'),
-    [streams]
+  const customStreams = useMemo(() => {
+    const rosterKeys = new Set(
+      rosterStreams.map(s => `${s.platform}:${s.channel.toLowerCase()}`)
+    );
+    return streams.filter(s => !rosterKeys.has(`${s.platform}:${s.channel.toLowerCase()}`));
+  }, [streams, rosterStreams]);
+  const { statuses, isLoading: isStatusLoading, refresh: refreshStatuses } = useLiveStatus(
+    rosterStreams,
+    customStreams
   );
-  const { statuses, isLoading: isStatusLoading, refresh: refreshStatuses } = useLiveStatus(customStreams);
 
   const [activeVillage, setActiveVillage] = useState<'konoha' | 'suna' | 'all' | 'custom'>(() => {
     if (typeof window !== 'undefined') {
@@ -222,6 +229,43 @@ export function useMultiwatch() {
   }, [streams, activeVillage, layoutMode, focusedStreamId]);
 
   useEffect(() => {
+    setStreams(prev => {
+      if (prev.length === 0) {
+        if (hasUserInteractedRef.current) return prev;
+        if (typeof window !== 'undefined') {
+          const streamsQuery = new URLSearchParams(window.location.search).get('streams');
+          if (streamsQuery) return prev;
+        }
+        const defaults = getDefaultStreams(rosterStreams);
+        return defaults.length > 0 ? defaults : prev;
+      }
+
+      let changed = false;
+      const next = prev.map(active => {
+        const matched = rosterStreams.find(
+          r => r.channel.toLowerCase() === active.channel.toLowerCase() && r.platform === active.platform
+        );
+        if (!matched) return active;
+        if (
+          active.name === matched.name &&
+          active.village === matched.village &&
+          active.roleTag === matched.roleTag
+        ) {
+          return active;
+        }
+        changed = true;
+        return {
+          ...active,
+          name: matched.name,
+          village: matched.village,
+          roleTag: matched.roleTag,
+        };
+      });
+      return changed ? next : prev;
+    });
+  }, [rosterStreams]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const handlePopState = (event: PopStateEvent) => {
@@ -232,10 +276,10 @@ export function useMultiwatch() {
       const state = event.state as MultiwatchHistoryState | null;
 
       const restoredStreams = streamsQuery
-        ? hydrateStreamsFromQuery(streamsQuery, ALL_CONFIG_STREAMS, streamsRef.current)
+        ? hydrateStreamsFromQuery(streamsQuery, rosterStreamsRef.current, streamsRef.current)
         : state && state.streamsQuery === ''
         ? []
-        : getDefaultStreams();
+        : getDefaultStreams(rosterStreamsRef.current);
 
       const restoredLayout = state?.layoutMode ?? siteConfig.defaultLayout;
       const safeLayout =
@@ -282,14 +326,9 @@ export function useMultiwatch() {
     mode: VillagePresetMode = 'live'
   ) => {
     const pool: StreamItem[] =
-      village === 'konoha'
-        ? siteConfig.villages.konoha.streams
-        : village === 'suna'
-        ? siteConfig.villages.suna.streams
-        : [
-            ...siteConfig.villages.konoha.streams,
-            ...siteConfig.villages.suna.streams,
-          ];
+      village === 'konoha' || village === 'suna'
+        ? rosterStreams.filter(s => s.village === village)
+        : rosterStreams;
 
     const newStreams = selectVillagePresetStreams(pool, statuses, mode);
     const villageLabel =
@@ -308,6 +347,7 @@ export function useMultiwatch() {
       return;
     }
 
+    hasUserInteractedRef.current = true;
     setActiveVillage(village);
     setStreams(newStreams);
     if (newStreams.length > 4) {
@@ -325,10 +365,11 @@ export function useMultiwatch() {
         ? `${villageLabel}: ${newStreams.length} canlı POV yüklendi`
         : `${villageLabel}: ${newStreams.length} kayıtlı POV yüklendi`
     );
-  }, [statuses, isStatusLoading, showToast]);
+  }, [rosterStreams, statuses, isStatusLoading, showToast]);
 
   // Add single stream (deterministic ID matching config/URL hydration, functional mute update)
   const addStream = useCallback((item: Omit<StreamItem, 'id'>) => {
+    hasUserInteractedRef.current = true;
     const channelLower = item.channel.toLowerCase();
     const current = streamsRef.current;
     const exists = current.some(
@@ -340,7 +381,7 @@ export function useMultiwatch() {
       return;
     }
 
-    const matchedConfig = ALL_CONFIG_STREAMS.find(
+    const matchedConfig = rosterStreams.find(
       s => s.channel.toLowerCase() === channelLower && s.platform === item.platform
     );
     const newId = matchedConfig?.id ?? `${item.platform}-${channelLower}`;
@@ -370,11 +411,12 @@ export function useMultiwatch() {
 
     setActiveVillage('custom');
     showToast(`"${item.name}" yayına eklendi`);
-  }, [showToast]);
+  }, [rosterStreams, showToast]);
 
   // Load multiple streams at once (e.g. "Watch All Live")
   const addMultipleStreams = useCallback((items: StreamItem[]) => {
     if (items.length === 0) return;
+    hasUserInteractedRef.current = true;
     setStreams(items);
     if (items.length > 4) {
       setLayoutModeState(curr => (curr === '2x2' ? 'auto' : curr));
@@ -390,6 +432,7 @@ export function useMultiwatch() {
 
   // Remove stream
   const removeStream = useCallback((id: string) => {
+    hasUserInteractedRef.current = true;
     setStreams(prev => prev.filter(s => s.id !== id));
     setMutedStreams(prev => {
       const next = new Set(prev);
@@ -402,6 +445,7 @@ export function useMultiwatch() {
 
   // Clear all streams
   const clearAllStreams = useCallback(() => {
+    hasUserInteractedRef.current = true;
     setStreams([]);
     setMutedStreams(new Set());
     setSoloStreamId(null);

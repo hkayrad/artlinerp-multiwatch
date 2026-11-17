@@ -11,8 +11,10 @@ import {
   Shield,
   Trash2,
   Upload,
+  Users,
   X,
 } from 'lucide-react';
+import { StreamItem } from '../config/siteConfig';
 import { AdminSession, FanartItem, FanartUploadResult, FanartVillage } from '../types/fanart';
 import {
   approveSubmission,
@@ -30,9 +32,12 @@ import { VillageEmblem } from './VillageEmblems';
 import { FanartUploadModal } from './FanartUploadModal';
 import { FanartLightbox } from './FanartLightbox';
 import { AdminAuthForm, AdminAuthModal } from './AdminAuthModal';
+import { StreamerAdminPanel } from './StreamerAdminPanel';
 
 interface FanartPageProps {
   mode: 'fanart' | 'admin';
+  rosterStreams: StreamItem[];
+  onStreamersChange: (streams: StreamItem[]) => void;
   onNavigate: (route: 'multiwatch' | 'fanart' | 'admin') => void;
   onNotify: (toast: ToastMessage) => void;
 }
@@ -134,7 +139,13 @@ const PendingSubmissionCard: React.FC<PendingCardProps> = ({
   );
 };
 
-export const FanartPage: React.FC<FanartPageProps> = ({ mode, onNavigate, onNotify }) => {
+export const FanartPage: React.FC<FanartPageProps> = ({
+  mode,
+  rosterStreams,
+  onStreamersChange,
+  onNavigate,
+  onNotify,
+}) => {
   const [items, setItems] = useState<FanartItem[]>([]);
   const [pendingItems, setPendingItems] = useState<FanartItem[]>([]);
   const [session, setSession] = useState<AdminSession>({
@@ -149,6 +160,9 @@ export const FanartPage: React.FC<FanartPageProps> = ({ mode, onNavigate, onNoti
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showAdminDrawer, setShowAdminDrawer] = useState(mode === 'admin');
+  const [adminTab, setAdminTab] = useState<'streamers' | 'fanart'>(
+    mode === 'admin' ? 'streamers' : 'fanart'
+  );
   const [lightboxId, setLightboxId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<FanartItem | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -189,6 +203,7 @@ export const FanartPage: React.FC<FanartPageProps> = ({ mode, onNavigate, onNoti
   useEffect(() => {
     if (mode === 'admin') {
       setShowAdminDrawer(true);
+      setAdminTab('streamers');
     }
   }, [mode]);
 
@@ -320,7 +335,7 @@ export const FanartPage: React.FC<FanartPageProps> = ({ mode, onNavigate, onNoti
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-orange-400" />
               <h1 className="text-base font-bold text-slate-100 naruto-title">
-                Fanart Yönetici Girişi
+                Yönetici Girişi
               </h1>
             </div>
             <button
@@ -332,7 +347,7 @@ export const FanartPage: React.FC<FanartPageProps> = ({ mode, onNavigate, onNoti
             </button>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Giriş yaptıktan sonra doğrudan galeriye fanart yükleyebilir ve ziyaretçi gönderimlerini onaylayabilirsiniz.
+            Giriş yaptıktan sonra derleme gerekmeden yayıncı kadrosunu yönetebilir, doğrudan fanart yükleyebilir ve ziyaretçi gönderimlerini onaylayabilirsiniz.
           </p>
           <AdminAuthForm configured={session.configured} onSuccess={handleAuthSuccess} />
         </div>
@@ -393,8 +408,8 @@ export const FanartPage: React.FC<FanartPageProps> = ({ mode, onNavigate, onNoti
                       : 'bg-ninja-900 hover:bg-ninja-800 border-ninja-700 text-slate-200'
                   }`}
                 >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Onay Kuyruğu</span>
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Yönetim Paneli</span>
                   {pendingItems.length > 0 && (
                     <span className="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-mono text-[10px] font-bold">
                       {pendingItems.length}
@@ -424,22 +439,59 @@ export const FanartPage: React.FC<FanartPageProps> = ({ mode, onNavigate, onNoti
           </div>
         </section>
 
-        {/* Admin Moderation Queue */}
+        {/* Admin Workspace (Streamer Roster + Fanart Moderation Queue) */}
         {session.authenticated && showAdminDrawer && (
-          <section className="p-4 rounded-2xl bg-ninja-900/90 border border-amber-500/30 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-400" />
-                <h2 className="text-sm font-bold text-slate-100 naruto-title">
-                  Onay Bekleyen Gönderimler ({pendingItems.length})
-                </h2>
+          <section className="p-4 rounded-2xl bg-ninja-900/90 border border-amber-500/30 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-ninja-700/70">
+              <div className="flex items-center gap-1.5 bg-ninja-950 p-1 rounded-xl border border-ninja-700/80">
+                <button
+                  type="button"
+                  onClick={() => setAdminTab('streamers')}
+                  className={`h-8 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${
+                    adminTab === 'streamers'
+                      ? 'bg-orange-600 text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-ninja-800'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Yayıncı Kadrosu</span>
+                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-black/25">
+                    {rosterStreams.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdminTab('fanart')}
+                  className={`h-8 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${
+                    adminTab === 'fanart'
+                      ? 'bg-amber-500 text-slate-950 font-bold'
+                      : 'text-slate-300 hover:text-white hover:bg-ninja-800'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Fanart Onay Kuyruğu</span>
+                  {pendingItems.length > 0 && (
+                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-950/20">
+                      {pendingItems.length}
+                    </span>
+                  )}
+                </button>
               </div>
+
               <span className="text-[11px] text-slate-400">
-                Onaylanan görseller <code className="text-slate-300">uploads/fanart/</code> klasörüne taşınır.
+                {adminTab === 'streamers'
+                  ? 'Değişiklikler fanart-data/streamers.json içine kaydedilir.'
+                  : 'Onaylanan görseller uploads/fanart/ klasörüne taşınır.'}
               </span>
             </div>
 
-            {pendingItems.length === 0 ? (
+            {adminTab === 'streamers' ? (
+              <StreamerAdminPanel
+                rosterStreams={rosterStreams}
+                onStreamersChange={onStreamersChange}
+                onNotify={onNotify}
+              />
+            ) : pendingItems.length === 0 ? (
               <div className="py-6 text-center text-xs text-slate-400 border border-dashed border-ninja-700 rounded-xl">
                 Şu anda onay bekleyen fanart bulunmuyor.
               </div>

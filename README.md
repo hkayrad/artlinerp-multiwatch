@@ -22,9 +22,19 @@
 
 ---
 
-## ⚙️ Sunucu ve Yayın Ayarları (`src/config/siteConfig.ts`)
+## ⚙️ Derlemeden Yayıncı Ekleme ve Ayarlar
 
-Sunucunuzdaki yayıncıları, logoları veya Discord linkini değiştirmek için yalnızca [`src/config/siteConfig.ts`](file:///home/hkayrad/Repos/artline-multiwatch/src/config/siteConfig.ts) dosyasını düzenlemeniz yeterlidir:
+### 1. Yönetici Paneli (`/admin`) ile Yayıncı Yönetimi (Önerilen)
+Uygulama yayındayken projeyi yeniden derlemeden (`/admin` sayfası üzerinden) yeni yayıncı ekleyebilir, düzenleyebilir veya silebilirsiniz:
+1. `/admin` adresine gidin ve `api/config.php` içinde tanımlı yönetici hesabıyla giriş yapın.
+2. **Yayıncı Kadrosu** sekmesinden karakter adı, Kick/Twitch kullanıcı adı (veya kanal linki), köy ve rol bilgisiyle yayıncı ekleyin.
+3. Değişiklikler sunucuda `fanart-data/streamers.json` dosyasına kaydedilir ve anında geçerli olur.
+
+### 2. Statik JSON (`public/streamers.json`) Yedeği
+PHP API (`api/streamers.php`) çalışmayan statik ortamlarda veya ilk kurulum tohum verisi olarak `public/streamers.json` (`dist/streamers.json`) dosyası kullanılır. cPanel Dosya Yöneticisi üzerinden `streamers.json` dosyasını düzenleyerek de derleme yapmadan yayıncı listesini güncelleyebilirsiniz (ancak `fanart-data/streamers.json` oluşturulduktan sonra PHP API bu dosyayı öncelikli kullanır).
+
+### 3. Genel Site Ayarları (`src/config/siteConfig.ts`)
+Sunucu adı, logolar, Discord bağlantısı ve varsayılan yedek liste [`src/config/siteConfig.ts`](file:///home/hkayrad/Repos/artline-multiwatch/src/config/siteConfig.ts) dosyasında yer alır:
 
 ```typescript
 export const siteConfig: SiteConfig = {

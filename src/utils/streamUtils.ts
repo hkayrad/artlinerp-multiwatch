@@ -114,8 +114,22 @@ export function hydrateStreamsFromQuery(
 }
 
 /**
+ * Compares two streams alphabetically by display name (Turkish locale, case-insensitive).
+ */
+export function compareStreamNames(a: StreamItem, b: StreamItem): number {
+  return a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' });
+}
+
+/**
+ * Returns a new array of streams sorted alphabetically by display name.
+ */
+export function sortStreamsAlphabetically(streams: StreamItem[]): StreamItem[] {
+  return [...streams].sort(compareStreamNames);
+}
+
+/**
  * Sorts streams so live channels appear first (highest viewer count first),
- * preserving original order for offline channels.
+ * sorting ties and offline channels alphabetically by display name.
  */
 export function sortStreamsLiveFirst(
   streams: StreamItem[],
@@ -128,9 +142,11 @@ export function sortStreamsLiveFirst(
     if (aLive && bLive) {
       const aViewers = statuses[a.id]?.viewers ?? 0;
       const bViewers = statuses[b.id]?.viewers ?? 0;
-      return bViewers - aViewers;
+      if (bViewers !== aViewers) {
+        return bViewers - aViewers;
+      }
     }
-    return 0;
+    return compareStreamNames(a, b);
   });
 }
 
